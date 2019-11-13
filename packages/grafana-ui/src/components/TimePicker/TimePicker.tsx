@@ -1,8 +1,5 @@
 // Libraries
 import React, { PureComponent, createRef } from 'react';
-import { css } from 'emotion';
-import memoizeOne from 'memoize-one';
-import classNames from 'classnames';
 
 // Components
 import { ButtonSelect } from '../Select/ButtonSelect';
@@ -14,42 +11,15 @@ import { ClickOutsideWrapper } from '../ClickOutsideWrapper/ClickOutsideWrapper'
 import { isDateTime, DateTime } from '@grafana/data';
 import { rangeUtil } from '@grafana/data';
 import { rawToTimeRange } from './time';
-import { withTheme } from '../../themes/ThemeContext';
 
 // Types
-import { TimeRange, TimeOption, TimeZone, TIME_FORMAT, SelectableValue, dateMath } from '@grafana/data';
-import { GrafanaTheme } from '@grafana/data';
-import { Themeable } from '../../types';
+import { TimeRange, TimeOption, TimeZone, TIME_FORMAT, SelectableValue } from '@grafana/data';
+import { dateMath } from '@grafana/data';
 
-const getStyles = memoizeOne((theme: GrafanaTheme) => {
-  return {
-    timePickerSynced: css`
-      label: timePickerSynced;
-      border-color: ${theme.colors.orangeDark};
-      background-image: none;
-      background-color: transparent;
-      color: ${theme.colors.orangeDark};
-      &:focus,
-      :hover {
-        color: ${theme.colors.orangeDark};
-        background-image: none;
-        background-color: transparent;
-      }
-    `,
-    noRightBorderStyle: css`
-      label: noRightBorderStyle;
-      border-right: 0;
-    `,
-  };
-});
-
-export interface Props extends Themeable {
-  hideText?: boolean;
+export interface Props {
   value: TimeRange;
   selectOptions: TimeOption[];
   timeZone?: TimeZone;
-  timeSyncButton?: JSX.Element;
-  isSynced?: boolean;
   onChange: (timeRange: TimeRange) => void;
   onMoveBackward: () => void;
   onMoveForward: () => void;
@@ -100,7 +70,7 @@ const defaultZoomOutTooltip = () => {
 export interface State {
   isCustomOpen: boolean;
 }
-class UnThemedTimePicker extends PureComponent<Props, State> {
+export class TimePicker extends PureComponent<Props, State> {
   pickerTriggerRef = createRef<HTMLDivElement>();
 
   state: State = {
@@ -150,20 +120,7 @@ class UnThemedTimePicker extends PureComponent<Props, State> {
   };
 
   render() {
-    const {
-      selectOptions: selectTimeOptions,
-      value,
-      onMoveBackward,
-      onMoveForward,
-      onZoom,
-      timeZone,
-      timeSyncButton,
-      isSynced,
-      theme,
-      hideText,
-    } = this.props;
-
-    const styles = getStyles(theme);
+    const { selectOptions: selectTimeOptions, value, onMoveBackward, onMoveForward, onZoom, timeZone } = this.props;
     const { isCustomOpen } = this.state;
     const options = this.mapTimeOptionsToSelectableValues(selectTimeOptions);
     const currentOption = options.find(item => isTimeOptionEqualToTimeRange(item.value, value));
@@ -177,30 +134,25 @@ class UnThemedTimePicker extends PureComponent<Props, State> {
     };
     const rangeString = rangeUtil.describeTimeRange(adjustedTimeRange);
 
-    const label = !hideText ? (
+    const label = (
       <>
         {isCustomOpen && <span>Custom time range</span>}
         {!isCustomOpen && <span>{rangeString}</span>}
         {isUTC && <span className="time-picker-utc">UTC</span>}
       </>
-    ) : (
-      ''
     );
-    const hasAbsolute = isDateTime(value.raw.from) || isDateTime(value.raw.to);
+    const isAbsolute = isDateTime(value.raw.to);
 
     return (
       <div className="time-picker" ref={this.pickerTriggerRef}>
         <div className="time-picker-buttons">
-          {hasAbsolute && (
+          {isAbsolute && (
             <button className="btn navbar-button navbar-button--tight" onClick={onMoveBackward}>
               <i className="fa fa-chevron-left" />
             </button>
           )}
           <ButtonSelect
-            className={classNames('time-picker-button-select', {
-              [`btn--radius-right-0 ${styles.noRightBorderStyle}`]: timeSyncButton,
-              [styles.timePickerSynced]: timeSyncButton ? isSynced : null,
-            })}
+            className="time-picker-button-select"
             value={currentOption}
             label={label}
             options={options}
@@ -209,10 +161,7 @@ class UnThemedTimePicker extends PureComponent<Props, State> {
             iconClass={'fa fa-clock-o fa-fw'}
             tooltipContent={<TimePickerTooltipContent timeRange={value} />}
           />
-
-          {timeSyncButton}
-
-          {hasAbsolute && (
+          {isAbsolute && (
             <button className="btn navbar-button navbar-button--tight" onClick={onMoveForward}>
               <i className="fa fa-chevron-right" />
             </button>
@@ -246,5 +195,3 @@ const TimePickerTooltipContent = ({ timeRange }: { timeRange: TimeRange }) => (
 function isTimeOptionEqualToTimeRange(option: TimeOption, range: TimeRange): boolean {
   return range.raw.from === option.from && range.raw.to === option.to;
 }
-
-export const TimePicker = withTheme(UnThemedTimePicker);

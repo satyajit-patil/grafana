@@ -1,22 +1,6 @@
 #!/bin/sh
 set -e
 
-UBUNTU_BASE=0
-
-while [ "$1" != "" ]; do
-  case "$1" in
-    "--ubuntu")
-      UBUNTU_BASE=1
-      echo "Ubuntu base image enabled"
-      shift
-      ;;
-    * )
-      # unknown param causes args to be passed through to $@
-      break
-      ;;
-  esac
-done
-
 _raw_grafana_tag=$1
 _docker_repo=${2:-grafana/grafana-enterprise}
 
@@ -26,25 +10,16 @@ else
   _grafana_tag="${_raw_grafana_tag}"
 fi
 
-if [ ${UBUNTU_BASE} = "0" ]; then
-  TAG_SUFFIX=""
-  DOCKERFILE="Dockerfile"
-else
-  TAG_SUFFIX="-ubuntu"
-  DOCKERFILE="Dockerfile.ubuntu"
-fi
-
-echo "Building and deploying ${_docker_repo}:${_grafana_tag}${TAG_SUFFIX}"
+echo "Building and deploying ${_docker_repo}:${_grafana_tag}"
 
 docker build \
-  --tag "${_docker_repo}:${_grafana_tag}${TAG_SUFFIX}" \
+  --tag "${_docker_repo}:${_grafana_tag}"\
   --no-cache=true \
-  -f ${DOCKERFILE} \
   .
 
-docker push "${_docker_repo}:${_grafana_tag}${TAG_SUFFIX}"
+docker push "${_docker_repo}:${_grafana_tag}"
 
 if echo "$_raw_grafana_tag" | grep -q "^v" && echo "$_raw_grafana_tag" | grep -qv "beta"; then
-  docker tag "${_docker_repo}:${_grafana_tag}${TAG_SUFFIX}" "${_docker_repo}:latest${TAG_SUFFIX}"
-  docker push "${_docker_repo}:latest${TAG_SUFFIX}"
+  docker tag "${_docker_repo}:${_grafana_tag}" "${_docker_repo}:latest"
+  docker push "${_docker_repo}:latest"
 fi

@@ -1,7 +1,6 @@
 import React from 'react';
 import { config, GrafanaBootConfig } from '@grafana/runtime';
-import { ThemeContext, getTheme } from '@grafana/ui';
-import { GrafanaThemeType } from '@grafana/data';
+import { GrafanaThemeType, ThemeContext, getTheme } from '@grafana/ui';
 
 export const ConfigContext = React.createContext<GrafanaBootConfig>(config);
 export const ConfigConsumer = ConfigContext.Consumer;

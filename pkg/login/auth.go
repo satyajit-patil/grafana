@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/grafana/grafana/pkg/bus"
-	"github.com/grafana/grafana/pkg/infra/log"
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/ldap"
 )
@@ -19,8 +18,6 @@ var (
 	ErrPasswordEmpty         = errors.New("No password provided")
 	ErrUserDisabled          = errors.New("User is disabled")
 )
-
-var loginLogger = log.New("login")
 
 func Init() {
 	bus.AddHandler("auth", AuthenticateUser)
@@ -53,10 +50,7 @@ func AuthenticateUser(query *models.LoginUserQuery) error {
 	}
 
 	if err == ErrInvalidCredentials || err == ldap.ErrInvalidCredentials {
-		if err := saveInvalidLoginAttempt(query); err != nil {
-			loginLogger.Error("Failed to save invalid login attempt", "err", err)
-		}
-
+		saveInvalidLoginAttempt(query)
 		return ErrInvalidCredentials
 	}
 

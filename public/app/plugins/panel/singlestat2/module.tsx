@@ -1,5 +1,4 @@
-import { sharedSingleStatMigrationHandler, sharedSingleStatPanelChangedHandler } from '@grafana/ui';
-import { PanelPlugin } from '@grafana/data';
+import { PanelPlugin, sharedSingleStatMigrationHandler, sharedSingleStatPanelChangedHandler } from '@grafana/ui';
 import { SingleStatOptions, defaults } from './types';
 import { SingleStatPanel } from './SingleStatPanel';
 import { SingleStatEditor } from './SingleStatEditor';

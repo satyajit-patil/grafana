@@ -14,7 +14,7 @@ import (
 
 // DashboardService service for operating on dashboards
 type DashboardService interface {
-	SaveDashboard(dto *SaveDashboardDTO, allowUiUpdate bool) (*models.Dashboard, error)
+	SaveDashboard(dto *SaveDashboardDTO) (*models.Dashboard, error)
 	ImportDashboard(dto *SaveDashboardDTO) (*models.Dashboard, error)
 	DeleteDashboard(dashboardId int64, orgId int64) error
 }
@@ -237,9 +237,8 @@ func (dr *dashboardServiceImpl) SaveFolderForProvisionedDashboards(dto *SaveDash
 	return cmd.Result, nil
 }
 
-func (dr *dashboardServiceImpl) SaveDashboard(dto *SaveDashboardDTO, allowUiUpdate bool) (*models.Dashboard, error) {
-
-	cmd, err := dr.buildSaveDashboardCommand(dto, true, !allowUiUpdate)
+func (dr *dashboardServiceImpl) SaveDashboard(dto *SaveDashboardDTO) (*models.Dashboard, error) {
+	cmd, err := dr.buildSaveDashboardCommand(dto, true, true)
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +309,7 @@ type FakeDashboardService struct {
 	SavedDashboards     []*SaveDashboardDTO
 }
 
-func (s *FakeDashboardService) SaveDashboard(dto *SaveDashboardDTO, allowUiUpdate bool) (*models.Dashboard, error) {
+func (s *FakeDashboardService) SaveDashboard(dto *SaveDashboardDTO) (*models.Dashboard, error) {
 	s.SavedDashboards = append(s.SavedDashboards, dto)
 
 	if s.SaveDashboardResult == nil && s.SaveDashboardError == nil {
@@ -321,7 +320,7 @@ func (s *FakeDashboardService) SaveDashboard(dto *SaveDashboardDTO, allowUiUpdat
 }
 
 func (s *FakeDashboardService) ImportDashboard(dto *SaveDashboardDTO) (*models.Dashboard, error) {
-	return s.SaveDashboard(dto, true)
+	return s.SaveDashboard(dto)
 }
 
 func (s *FakeDashboardService) DeleteDashboard(dashboardId int64, orgId int64) error {

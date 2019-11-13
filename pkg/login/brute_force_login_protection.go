@@ -34,9 +34,9 @@ var validateLoginAttempts = func(username string) error {
 	return nil
 }
 
-var saveInvalidLoginAttempt = func(query *m.LoginUserQuery) error {
+var saveInvalidLoginAttempt = func(query *m.LoginUserQuery) {
 	if setting.DisableBruteForceLoginProtection {
-		return nil
+		return
 	}
 
 	loginAttemptCommand := m.CreateLoginAttemptCommand{
@@ -44,5 +44,5 @@ var saveInvalidLoginAttempt = func(query *m.LoginUserQuery) error {
 		IpAddress: query.IpAddress,
 	}
 
-	return bus.Dispatch(&loginAttemptCommand)
+	bus.Dispatch(&loginAttemptCommand)
 }

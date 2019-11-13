@@ -22,14 +22,11 @@ func runDbCommand(command func(commandLine utils.CommandLine, sqlStore *sqlstore
 		cfg := setting.NewCfg()
 
 		configOptions := strings.Split(cmd.GlobalString("configOverrides"), " ")
-		if err := cfg.Load(&setting.CommandLineArgs{
+		cfg.Load(&setting.CommandLineArgs{
 			Config:   cmd.ConfigFile(),
 			HomePath: cmd.HomePath(),
 			Args:     append(configOptions, cmd.Args()...), // tailing arguments have precedence over the options string
-		}); err != nil {
-			logger.Errorf("\n%s: Failed to load configuration", color.RedString("Error"))
-			os.Exit(1)
-		}
+		})
 
 		if debug {
 			cfg.LogConfigSources()
@@ -38,19 +35,13 @@ func runDbCommand(command func(commandLine utils.CommandLine, sqlStore *sqlstore
 		engine := &sqlstore.SqlStore{}
 		engine.Cfg = cfg
 		engine.Bus = bus.GetBus()
-		if err := engine.Init(); err != nil {
-			logger.Errorf("\n%s: Failed to initialize SQL engine", color.RedString("Error"))
-			os.Exit(1)
-		}
+		engine.Init()
 
 		if err := command(cmd, engine); err != nil {
 			logger.Errorf("\n%s: ", color.RedString("Error"))
 			logger.Errorf("%s\n\n", err)
 
-			if err := cmd.ShowHelp(); err != nil {
-				logger.Errorf("\n%s: Failed to show help: %s %s\n\n", color.RedString("Error"),
-					color.RedString("✗"), err)
-			}
+			cmd.ShowHelp()
 			os.Exit(1)
 		}
 
@@ -66,10 +57,7 @@ func runPluginCommand(command func(commandLine utils.CommandLine) error) func(co
 			logger.Errorf("\n%s: ", color.RedString("Error"))
 			logger.Errorf("%s %s\n\n", color.RedString("✗"), err)
 
-			if err := cmd.ShowHelp(); err != nil {
-				logger.Errorf("\n%s: Failed to show help: %s %s\n\n", color.RedString("Error"),
-					color.RedString("✗"), err)
-			}
+			cmd.ShowHelp()
 			os.Exit(1)
 		}
 

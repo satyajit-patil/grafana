@@ -5,10 +5,13 @@ import { css } from 'emotion';
 import { Tooltip } from '../Tooltip/Tooltip';
 import { ButtonSelect } from '../Select/ButtonSelect';
 import memoizeOne from 'memoize-one';
-import { GrafanaTheme } from '@grafana/data';
+import { GrafanaTheme } from '../../types';
 import { withTheme } from '../../themes';
 
-const defaultIntervals = ['5s', '10s', '30s', '1m', '5m', '15m', '30m', '1h', '2h', '1d'];
+export const offOption = { label: 'Off', value: '' };
+export const liveOption = { label: 'Live', value: 'LIVE' };
+export const defaultIntervals = ['5s', '10s', '30s', '1m', '5m', '15m', '30m', '1h', '2h', '1d'];
+export const isLive = (refreshInterval: string): boolean => refreshInterval === liveOption.value;
 
 const getStyles = memoizeOne((theme: GrafanaTheme) => {
   return {
@@ -35,9 +38,10 @@ export interface Props {
 }
 
 export class RefreshPickerBase extends PureComponent<Props> {
-  static offOption = { label: 'Off', value: '' };
-  static liveOption = { label: 'Live', value: 'LIVE' };
-  static isLive = (refreshInterval: string): boolean => refreshInterval === RefreshPicker.liveOption.value;
+  // Make it exported as static properties to be easier to access. The global exports need to be accessed by direct
+  // import of this source file which won't work if this was installed as package.
+  static offOption = offOption;
+  static liveOption = liveOption;
 
   constructor(props: Props) {
     super(props);
@@ -50,10 +54,10 @@ export class RefreshPickerBase extends PureComponent<Props> {
       .map(interval => ({ label: interval, value: interval }));
 
     if (this.props.hasLiveOption) {
-      options.unshift(RefreshPicker.liveOption);
+      options.unshift(liveOption);
     }
 
-    options.unshift(RefreshPicker.offOption);
+    options.unshift(offOption);
     return options;
   };
 
@@ -69,13 +73,13 @@ export class RefreshPickerBase extends PureComponent<Props> {
     const { onRefresh, intervals, tooltip, value, refreshButton, buttonSelectClassName, theme } = this.props;
     const options = this.intervalsToOptions(intervals);
     const currentValue = value || '';
-    const selectedValue = options.find(item => item.value === currentValue) || RefreshPicker.offOption;
+    const selectedValue = options.find(item => item.value === currentValue) || offOption;
     const styles = getStyles(theme);
 
     const cssClasses = classNames({
       'refresh-picker': true,
-      'refresh-picker--off': selectedValue.label === RefreshPicker.offOption.label,
-      'refresh-picker--live': selectedValue === RefreshPicker.liveOption,
+      'refresh-picker--off': selectedValue.label === offOption.label,
+      'refresh-picker--live': selectedValue === liveOption,
     });
 
     return (
@@ -112,6 +116,5 @@ export const RefreshPicker = withTheme<
   {
     offOption: typeof RefreshPickerBase.offOption;
     liveOption: typeof RefreshPickerBase.liveOption;
-    isLive: typeof RefreshPickerBase.isLive;
   }
 >(RefreshPickerBase);

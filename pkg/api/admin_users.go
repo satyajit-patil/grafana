@@ -61,11 +61,7 @@ func AdminUpdateUserPassword(c *models.ReqContext, form dtos.AdminUpdateUserPass
 		return
 	}
 
-	passwordHashed, err := util.EncodePassword(form.Password, userQuery.Result.Salt)
-	if err != nil {
-		c.JsonApiErr(500, "Could not encode password", err)
-		return
-	}
+	passwordHashed := util.EncodePassword(form.Password, userQuery.Result.Salt)
 
 	cmd := models.ChangeUserPasswordCommand{
 		UserId:      userID,

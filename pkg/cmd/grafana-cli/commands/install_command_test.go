@@ -2,7 +2,7 @@ package commands
 
 import (
 	"fmt"
-	"io"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"testing"
@@ -52,8 +52,10 @@ func TestExtractFiles(t *testing.T) {
 		pluginDir, del := setupFakePluginsDir(t)
 		defer del()
 
-		archive := "testdata/grafana-simple-json-datasource-ec18fa4da8096a952608a7e4c7782b4260b41bcf.zip"
-		err := extractFiles(archive, "grafana-simple-json-datasource", pluginDir, false)
+		body, err := ioutil.ReadFile("testdata/grafana-simple-json-datasource-ec18fa4da8096a952608a7e4c7782b4260b41bcf.zip")
+		assert.Nil(t, err)
+
+		err = extractFiles(body, "grafana-simple-json-datasource", pluginDir, false)
 		assert.Nil(t, err)
 
 		//File in zip has permissions 755
@@ -81,7 +83,10 @@ func TestExtractFiles(t *testing.T) {
 		pluginDir, del := setupFakePluginsDir(t)
 		defer del()
 
-		err := extractFiles("testdata/plugin-with-symlink.zip", "plugin-with-symlink", pluginDir, false)
+		body, err := ioutil.ReadFile("testdata/plugin-with-symlink.zip")
+		assert.Nil(t, err)
+
+		err = extractFiles(body, "plugin-with-symlink", pluginDir, false)
 		assert.Nil(t, err)
 
 		_, err = os.Stat(pluginDir + "/plugin-with-symlink/text.txt")
@@ -95,7 +100,10 @@ func TestExtractFiles(t *testing.T) {
 		pluginDir, del := setupFakePluginsDir(t)
 		defer del()
 
-		err := extractFiles("testdata/plugin-with-symlink.zip", "plugin-with-symlink", pluginDir, true)
+		body, err := ioutil.ReadFile("testdata/plugin-with-symlink.zip")
+		assert.Nil(t, err)
+
+		err = extractFiles(body, "plugin-with-symlink", pluginDir, true)
 		assert.Nil(t, err)
 
 		_, err = os.Stat(pluginDir + "/plugin-with-symlink/symlink_to_txt")
@@ -220,15 +228,13 @@ func setupPluginInstallCmd(t *testing.T, pluginDir string) utils.CommandLine {
 		return plugin, nil
 	}
 
-	client.DownloadFileFunc = func(pluginName string, tmpFile *os.File, url string, checksum string) (err error) {
+	client.DownloadFileFunc = func(pluginName, filePath, url string, checksum string) (content []byte, err error) {
 		assert.Equal(t, "test-plugin-panel", pluginName)
 		assert.Equal(t, "/test-plugin-panel/versions/1.0.0/download", url)
 		assert.Equal(t, "test", checksum)
-		f, err := os.Open("testdata/grafana-simple-json-datasource-ec18fa4da8096a952608a7e4c7782b4260b41bcf.zip")
+		body, err := ioutil.ReadFile("testdata/grafana-simple-json-datasource-ec18fa4da8096a952608a7e4c7782b4260b41bcf.zip")
 		assert.Nil(t, err)
-		_, err = io.Copy(tmpFile, f)
-		assert.Nil(t, err)
-		return nil
+		return body, nil
 	}
 
 	cmd.Client = client

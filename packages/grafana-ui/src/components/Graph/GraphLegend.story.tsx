@@ -12,7 +12,7 @@ const GraphLegendStories = storiesOf('Visualizations/Graph/GraphLegend', module)
 GraphLegendStories.addDecorator(withHorizontallyCenteredStory);
 
 const getStoriesKnobs = (isList = false) => {
-  const statsToDisplay = select<any>(
+  const statsToDisplay = select(
     'Stats to display',
     {
       none: [],

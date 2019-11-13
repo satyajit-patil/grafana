@@ -97,8 +97,6 @@ func ImportDashboard(cmd *ImportDashboardCommand) error {
 		ImportedUrl:      savedDash.GetUrl(),
 		ImportedRevision: dashboard.Data.Get("revision").MustInt64(1),
 		Imported:         true,
-		DashboardId:      savedDash.Id,
-		Slug:             savedDash.Slug,
 	}
 
 	return nil

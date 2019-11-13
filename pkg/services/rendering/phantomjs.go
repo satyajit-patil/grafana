@@ -30,15 +30,9 @@ func (rs *RenderingService) renderViaPhantomJS(ctx context.Context, opts Opts) (
 	}
 
 	scriptPath, _ := filepath.Abs(filepath.Join(rs.Cfg.PhantomDir, "render.js"))
-	pngPath, err := rs.getFilePathForNewImage()
-	if err != nil {
-		return nil, err
-	}
+	pngPath := rs.getFilePathForNewImage()
 
-	renderKey, err := middleware.AddRenderAuthKey(opts.OrgId, opts.UserId, opts.OrgRole)
-	if err != nil {
-		return nil, err
-	}
+	renderKey := middleware.AddRenderAuthKey(opts.OrgId, opts.UserId, opts.OrgRole)
 	defer middleware.RemoveRenderAuthKey(renderKey)
 
 	phantomDebugArg := "--debug=false"

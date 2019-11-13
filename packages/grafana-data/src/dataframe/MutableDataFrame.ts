@@ -1,5 +1,5 @@
 import { Field, DataFrame, DataFrameDTO, FieldDTO, FieldType } from '../types/dataFrame';
-import { KeyValue, QueryResultMeta } from '../types/data';
+import { KeyValue, QueryResultMeta, Labels } from '../types/data';
 import { guessFieldTypeFromValue, guessFieldTypeForField, toDataFrameDTO } from './processDataFrame';
 import isArray from 'lodash/isArray';
 import isString from 'lodash/isString';
@@ -16,6 +16,7 @@ export const MISSING_VALUE: any = null;
 
 export class MutableDataFrame<T = any> implements DataFrame, MutableVector<T> {
   name?: string;
+  labels?: Labels;
   refId?: string;
   meta?: QueryResultMeta;
 
@@ -35,9 +36,12 @@ export class MutableDataFrame<T = any> implements DataFrame, MutableVector<T> {
 
     // Copy values from
     if (source) {
-      const { name, refId, meta, fields } = source;
+      const { name, labels, refId, meta, fields } = source;
       if (name) {
         this.name = name;
+      }
+      if (labels) {
+        this.labels = labels;
       }
       if (refId) {
         this.refId = refId;
@@ -112,7 +116,6 @@ export class MutableDataFrame<T = any> implements DataFrame, MutableVector<T> {
       type,
       config: f.config || {},
       values: this.creator(buffer),
-      labels: f.labels,
     };
 
     if (type === FieldType.other) {
@@ -229,11 +232,6 @@ export class MutableDataFrame<T = any> implements DataFrame, MutableVector<T> {
       if (field.type !== FieldType.string && isString(val)) {
         if (!field.parse) {
           field.parse = makeFieldParser(val, field);
-        }
-        val = field.parse(val);
-      } else if (field.type === FieldType.time && isArray(val)) {
-        if (!field.parse) {
-          field.parse = (val: any[]) => val[0] || undefined;
         }
         val = field.parse(val);
       }

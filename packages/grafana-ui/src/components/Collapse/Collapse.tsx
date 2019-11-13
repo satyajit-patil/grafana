@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useContext } from 'react';
 import { css, cx } from 'emotion';
 
-import { GrafanaTheme } from '@grafana/data';
+import { GrafanaTheme } from '../../types/theme';
 import { selectThemeVariant } from '../../themes/selectThemeVariant';
 import { ThemeContext } from '../../themes/ThemeContext';
 import { stylesFactory } from '../../themes/stylesFactory';

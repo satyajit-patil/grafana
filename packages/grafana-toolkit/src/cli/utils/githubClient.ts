@@ -1,7 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 
-const grafanaURL = 'https://api.github.com/repos/grafana/grafana';
-const enterpriseURL = 'https://api.github.com/repos/grafana/grafana-enterprise';
+const baseURL = 'https://api.github.com/repos/grafana/grafana';
 
 // Encapsulates the creation of a client for the Github API
 //
@@ -11,20 +10,15 @@ const enterpriseURL = 'https://api.github.com/repos/grafana/grafana-enterprise';
 // they're not required - the library will use them. This allows us to overcome
 // any API rate limiting imposed without authentication.
 
-interface GithubClientProps {
-  required?: boolean;
-  enterprise?: boolean;
-}
-
 class GithubClient {
   client: AxiosInstance;
 
-  constructor({ required = false, enterprise = false }: GithubClientProps = {}) {
+  constructor(required = false) {
     const username = process.env.GITHUB_USERNAME;
     const token = process.env.GITHUB_ACCESS_TOKEN;
 
     const clientConfig: AxiosRequestConfig = {
-      baseURL: enterprise ? enterpriseURL : grafanaURL,
+      baseURL: baseURL,
       timeout: 10000,
     };
 

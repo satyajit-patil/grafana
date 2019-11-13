@@ -1,27 +1,28 @@
-import { FieldType, LogRowModel, MutableDataFrame, Labels, LogLevel, DataQueryResponse } from '@grafana/data';
+import { FieldType, LogRowModel, MutableDataFrame } from '@grafana/data';
 import { getRowContexts } from './LogRowContextProvider';
+import { Labels, LogLevel } from '@grafana/data/src';
+import { DataQueryResponse } from '../../types';
 
 describe('getRowContexts', () => {
   describe('when called with a DataFrame and results are returned', () => {
     it('then the result should be in correct format', async () => {
       const firstResult = new MutableDataFrame({
         refId: 'B',
+        labels: {},
         fields: [
           { name: 'ts', type: FieldType.time, values: [3, 2, 1] },
-          { name: 'line', type: FieldType.string, values: ['3', '2', '1'], labels: {} },
+          { name: 'line', type: FieldType.string, values: ['3', '2', '1'] },
         ],
       });
       const secondResult = new MutableDataFrame({
         refId: 'B',
+        labels: {},
         fields: [
           { name: 'ts', type: FieldType.time, values: [6, 5, 4] },
-          { name: 'line', type: FieldType.string, values: ['6', '5', '4'], labels: {} },
+          { name: 'line', type: FieldType.string, values: ['6', '5', '4'] },
         ],
       });
       const row: LogRowModel = {
-        entryFieldIndex: 0,
-        rowIndex: 0,
-        dataFrame: new MutableDataFrame(),
         entry: '4',
         labels: (null as any) as Labels,
         hasAnsi: false,
@@ -32,7 +33,6 @@ describe('getRowContexts', () => {
         timeLocal: '',
         timeUtc: '',
         timestamp: '4',
-        uid: '1',
       };
 
       let called = false;
@@ -55,9 +55,6 @@ describe('getRowContexts', () => {
       const firstError = new Error('Error 1');
       const secondError = new Error('Error 2');
       const row: LogRowModel = {
-        entryFieldIndex: 0,
-        rowIndex: 0,
-        dataFrame: new MutableDataFrame(),
         entry: '4',
         labels: (null as any) as Labels,
         hasAnsi: false,
@@ -68,7 +65,6 @@ describe('getRowContexts', () => {
         timeLocal: '',
         timeUtc: '',
         timestamp: '4',
-        uid: '1',
       };
 
       let called = false;

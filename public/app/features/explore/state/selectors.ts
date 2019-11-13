@@ -1,19 +1,29 @@
-import { createSelector } from 'reselect';
+import { createLodashMemoizedSelector } from 'app/core/utils/reselect';
 import { ExploreItemState } from 'app/types';
 import { filterLogLevels, dedupLogRows } from 'app/core/logs_model';
 
-const logsRowsSelector = (state: ExploreItemState) => state.logsResult && state.logsResult.rows;
+export const exploreItemUIStateSelector = (itemState: ExploreItemState) => {
+  const { showingGraph, showingTable, showingStartPage, dedupStrategy } = itemState;
+  return {
+    showingGraph,
+    showingTable,
+    showingStartPage,
+    dedupStrategy,
+  };
+};
+
+const logsSelector = (state: ExploreItemState) => state.logsResult;
 const hiddenLogLevelsSelector = (state: ExploreItemState) => state.hiddenLogLevels;
 const dedupStrategySelector = (state: ExploreItemState) => state.dedupStrategy;
-export const deduplicatedRowsSelector = createSelector(
-  logsRowsSelector,
+export const deduplicatedLogsSelector = createLodashMemoizedSelector(
+  logsSelector,
   hiddenLogLevelsSelector,
   dedupStrategySelector,
-  function dedupRows(rows, hiddenLogLevels, dedupStrategy) {
-    if (!(rows && rows.length)) {
-      return rows;
+  (logs, hiddenLogLevels, dedupStrategy) => {
+    if (!logs) {
+      return null;
     }
-    const filteredRows = filterLogLevels(rows, new Set(hiddenLogLevels));
-    return dedupLogRows(filteredRows, dedupStrategy);
+    const filteredData = filterLogLevels(logs, new Set(hiddenLogLevels));
+    return dedupLogRows(filteredData, dedupStrategy);
   }
 );

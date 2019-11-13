@@ -16,9 +16,4 @@ describe('MetricTree', () => {
     const nodes = queryMetricTree('A.{AB,AC}.*').map(i => i.name);
     expect(nodes).toEqual(['ABA', 'ABB', 'ABC', 'ACA', 'ACB', 'ACC']);
   });
-
-  it('queryMetric tree supports wildcard matching', () => {
-    const nodes = queryMetricTree('A.AB.AB*').map(i => i.name);
-    expect(nodes).toEqual(['ABA', 'ABB', 'ABC']);
-  });
 });

@@ -1,4 +1,4 @@
-import { DataQuery, DataSourceJsonData } from '@grafana/data';
+import { DataQuery, DataSourceJsonData } from '@grafana/ui';
 
 export interface ElasticsearchOptions extends DataSourceJsonData {
   timeField: string;

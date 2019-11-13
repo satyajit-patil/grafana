@@ -58,7 +58,7 @@ const testContext = (options: any = {}) => {
     queryIntervals: { intervalMs: 10 },
   } as any) as ExploreItemState;
 
-  const resultProcessor = new ResultProcessor(state, combinedOptions.dataFrames, 60000, 'utc');
+  const resultProcessor = new ResultProcessor(state, combinedOptions.dataFrames, 60000);
 
   return {
     dataFrames: combinedOptions.dataFrames,
@@ -99,9 +99,7 @@ describe('ResultProcessor', () => {
   describe('constructed with a result that is a DataQueryResponse', () => {
     describe('when calling getGraphResult', () => {
       it('then it should return correct graph result', () => {
-        const { resultProcessor, dataFrames } = testContext();
-        const timeField = dataFrames[0].fields[1];
-        const valueField = dataFrames[0].fields[0];
+        const { resultProcessor } = testContext();
         const theResult = resultProcessor.getGraphResult();
 
         expect(theResult).toEqual([
@@ -114,10 +112,6 @@ describe('ResultProcessor', () => {
             yAxis: {
               index: 1,
             },
-            seriesIndex: 0,
-            timeField,
-            valueField,
-            timeStep: 100,
           },
         ]);
       });
@@ -143,10 +137,7 @@ describe('ResultProcessor', () => {
 
     describe('when calling getLogsResult', () => {
       it('then it should return correct logs result', () => {
-        const { resultProcessor, dataFrames } = testContext({ mode: ExploreMode.Logs });
-        const timeField = dataFrames[0].fields[1];
-        const valueField = dataFrames[0].fields[0];
-        const logsDataFrame = dataFrames[1];
+        const { resultProcessor } = testContext({ mode: ExploreMode.Logs });
         const theResult = resultProcessor.getLogsResult();
 
         expect(theResult).toEqual({
@@ -154,10 +145,7 @@ describe('ResultProcessor', () => {
           meta: [],
           rows: [
             {
-              rowIndex: 2,
-              dataFrame: logsDataFrame,
               entry: 'third',
-              entryFieldIndex: 2,
               hasAnsi: false,
               labels: undefined,
               logLevel: 'unknown',
@@ -168,14 +156,10 @@ describe('ResultProcessor', () => {
               timeLocal: 'format() jest mocked',
               timeUtc: 'format() jest mocked',
               timestamp: 300,
-              uid: '2',
               uniqueLabels: {},
             },
             {
-              rowIndex: 1,
-              dataFrame: logsDataFrame,
               entry: 'second message',
-              entryFieldIndex: 2,
               hasAnsi: false,
               labels: undefined,
               logLevel: 'unknown',
@@ -186,14 +170,10 @@ describe('ResultProcessor', () => {
               timeLocal: 'format() jest mocked',
               timeUtc: 'format() jest mocked',
               timestamp: 200,
-              uid: '1',
               uniqueLabels: {},
             },
             {
-              rowIndex: 0,
-              dataFrame: logsDataFrame,
               entry: 'this is a message',
-              entryFieldIndex: 2,
               hasAnsi: false,
               labels: undefined,
               logLevel: 'unknown',
@@ -204,7 +184,6 @@ describe('ResultProcessor', () => {
               timeLocal: 'format() jest mocked',
               timeUtc: 'format() jest mocked',
               timestamp: 100,
-              uid: '0',
               uniqueLabels: {},
             },
           ],
@@ -218,10 +197,6 @@ describe('ResultProcessor', () => {
               yAxis: {
                 index: 1,
               },
-              seriesIndex: 0,
-              timeField,
-              valueField,
-              timeStep: 100,
             },
           ],
         });

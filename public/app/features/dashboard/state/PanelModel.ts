@@ -4,23 +4,12 @@ import _ from 'lodash';
 import { Emitter } from 'app/core/utils/emitter';
 import { getNextRefIdChar } from 'app/core/utils/query';
 // Types
-import {
-  DataQuery,
-  DataQueryResponseData,
-  PanelPlugin,
-  PanelEvents,
-  DataLink,
-  DataTransformerConfig,
-  ScopedVars,
-} from '@grafana/data';
+import { DataQuery, DataQueryResponseData, PanelPlugin } from '@grafana/ui';
+import { DataLink, DataTransformerConfig, ScopedVars } from '@grafana/data';
 
 import config from 'app/core/config';
 
 import { PanelQueryRunner } from './PanelQueryRunner';
-import { eventFactory } from '@grafana/data';
-
-export const panelAdded = eventFactory<PanelModel | undefined>('panel-added');
-export const panelRemoved = eventFactory<PanelModel | undefined>('panel-removed');
 
 export interface GridPos {
   x: number;
@@ -190,7 +179,7 @@ export class PanelModel {
   setViewMode(fullscreen: boolean, isEditing: boolean) {
     this.fullscreen = fullscreen;
     this.isEditing = isEditing;
-    this.events.emit(PanelEvents.viewModeChanged);
+    this.events.emit('view-mode-changed');
   }
 
   updateGridPos(newPos: GridPos) {
@@ -206,29 +195,29 @@ export class PanelModel {
     this.gridPos.h = newPos.h;
 
     if (sizeChanged) {
-      this.events.emit(PanelEvents.panelSizeChanged);
+      this.events.emit('panel-size-changed');
     }
   }
 
   resizeDone() {
-    this.events.emit(PanelEvents.panelSizeChanged);
+    this.events.emit('panel-size-changed');
   }
 
   refresh() {
     this.hasRefreshed = true;
-    this.events.emit(PanelEvents.refresh);
+    this.events.emit('refresh');
   }
 
   render() {
     if (!this.hasRefreshed) {
       this.refresh();
     } else {
-      this.events.emit(PanelEvents.render);
+      this.events.emit('render');
     }
   }
 
   initialized() {
-    this.events.emit(PanelEvents.panelInitialized);
+    this.events.emit('panel-initialized');
   }
 
   private getOptionsToRemember() {
@@ -255,16 +244,7 @@ export class PanelModel {
     if (plugin.angularConfigCtrl) {
       return;
     }
-    this.options = _.mergeWith(
-      {},
-      plugin.defaults,
-      this.options || {},
-      (objValue: any, srcValue: any): any => {
-        if (_.isArray(srcValue)) {
-          return srcValue;
-        }
-      }
-    );
+    this.options = _.defaultsDeep({}, this.options || {}, plugin.defaults);
   }
 
   pluginLoaded(plugin: PanelPlugin) {
@@ -363,7 +343,7 @@ export class PanelModel {
   }
 
   destroy() {
-    this.events.emit(PanelEvents.panelTeardown);
+    this.events.emit('panel-teardown');
     this.events.removeAllListeners();
 
     if (this.queryRunner) {

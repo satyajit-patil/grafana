@@ -303,13 +303,10 @@ func (e *StackdriverExecutor) executeQuery(ctx context.Context, query *Stackdriv
 
 	defer span.Finish()
 
-	if err := opentracing.GlobalTracer().Inject(
+	opentracing.GlobalTracer().Inject(
 		span.Context(),
 		opentracing.HTTPHeaders,
-		opentracing.HTTPHeadersCarrier(req.Header)); err != nil {
-		queryResult.Error = err
-		return queryResult, StackdriverResponse{}, nil
-	}
+		opentracing.HTTPHeadersCarrier(req.Header))
 
 	res, err := ctxhttp.Do(ctx, e.httpClient, req)
 	if err != nil {

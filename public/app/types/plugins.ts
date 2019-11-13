@@ -1,4 +1,4 @@
-import { PluginMeta } from '@grafana/data';
+import { PluginMeta } from '@grafana/ui';
 
 export interface PluginDashboard {
   dashboardId: number;

@@ -52,8 +52,7 @@ func TestLoadingSettings(t *testing.T) {
 			os.Setenv("GF_SECURITY_ADMIN_USER", "superduper")
 
 			cfg := NewCfg()
-			err := cfg.Load(&CommandLineArgs{HomePath: "../../"})
-			So(err, ShouldBeNil)
+			cfg.Load(&CommandLineArgs{HomePath: "../../"})
 
 			So(AdminUser, ShouldEqual, "superduper")
 			So(cfg.DataPath, ShouldEqual, filepath.Join(HomePath, "data"))
@@ -64,8 +63,7 @@ func TestLoadingSettings(t *testing.T) {
 			os.Setenv("GF_SECURITY_ADMIN_PASSWORD", "supersecret")
 
 			cfg := NewCfg()
-			err := cfg.Load(&CommandLineArgs{HomePath: "../../"})
-			So(err, ShouldBeNil)
+			cfg.Load(&CommandLineArgs{HomePath: "../../"})
 
 			So(appliedEnvOverrides, ShouldContain, "GF_SECURITY_ADMIN_PASSWORD=*********")
 		})
@@ -83,8 +81,7 @@ func TestLoadingSettings(t *testing.T) {
 			os.Setenv("GF_DATABASE_URL", "mysql://user:secret@localhost:3306/database")
 
 			cfg := NewCfg()
-			err := cfg.Load(&CommandLineArgs{HomePath: "../../"})
-			So(err, ShouldBeNil)
+			cfg.Load(&CommandLineArgs{HomePath: "../../"})
 
 			So(appliedEnvOverrides, ShouldContain, "GF_DATABASE_URL=mysql://user:-redacted-@localhost:3306/database")
 		})
@@ -100,20 +97,18 @@ func TestLoadingSettings(t *testing.T) {
 		Convey("Should be able to override via command line", func() {
 			if runtime.GOOS == windows {
 				cfg := NewCfg()
-				err := cfg.Load(&CommandLineArgs{
+				cfg.Load(&CommandLineArgs{
 					HomePath: "../../",
 					Args:     []string{`cfg:paths.data=c:\tmp\data`, `cfg:paths.logs=c:\tmp\logs`},
 				})
-				So(err, ShouldBeNil)
 				So(cfg.DataPath, ShouldEqual, `c:\tmp\data`)
 				So(cfg.LogsPath, ShouldEqual, `c:\tmp\logs`)
 			} else {
 				cfg := NewCfg()
-				err := cfg.Load(&CommandLineArgs{
+				cfg.Load(&CommandLineArgs{
 					HomePath: "../../",
 					Args:     []string{"cfg:paths.data=/tmp/data", "cfg:paths.logs=/tmp/logs"},
 				})
-				So(err, ShouldBeNil)
 
 				So(cfg.DataPath, ShouldEqual, "/tmp/data")
 				So(cfg.LogsPath, ShouldEqual, "/tmp/logs")
@@ -122,14 +117,13 @@ func TestLoadingSettings(t *testing.T) {
 
 		Convey("Should be able to override defaults via command line", func() {
 			cfg := NewCfg()
-			err := cfg.Load(&CommandLineArgs{
+			cfg.Load(&CommandLineArgs{
 				HomePath: "../../",
 				Args: []string{
 					"cfg:default.server.domain=test2",
 				},
 				Config: filepath.Join(HomePath, "pkg/setting/testdata/override.ini"),
 			})
-			So(err, ShouldBeNil)
 
 			So(Domain, ShouldEqual, "test2")
 		})
@@ -137,22 +131,20 @@ func TestLoadingSettings(t *testing.T) {
 		Convey("Defaults can be overridden in specified config file", func() {
 			if runtime.GOOS == windows {
 				cfg := NewCfg()
-				err := cfg.Load(&CommandLineArgs{
+				cfg.Load(&CommandLineArgs{
 					HomePath: "../../",
 					Config:   filepath.Join(HomePath, "pkg/setting/testdata/override_windows.ini"),
 					Args:     []string{`cfg:default.paths.data=c:\tmp\data`},
 				})
-				So(err, ShouldBeNil)
 
 				So(cfg.DataPath, ShouldEqual, `c:\tmp\override`)
 			} else {
 				cfg := NewCfg()
-				err := cfg.Load(&CommandLineArgs{
+				cfg.Load(&CommandLineArgs{
 					HomePath: "../../",
 					Config:   filepath.Join(HomePath, "pkg/setting/testdata/override.ini"),
 					Args:     []string{"cfg:default.paths.data=/tmp/data"},
 				})
-				So(err, ShouldBeNil)
 
 				So(cfg.DataPath, ShouldEqual, "/tmp/override")
 			}
@@ -161,22 +153,20 @@ func TestLoadingSettings(t *testing.T) {
 		Convey("Command line overrides specified config file", func() {
 			if runtime.GOOS == windows {
 				cfg := NewCfg()
-				err := cfg.Load(&CommandLineArgs{
+				cfg.Load(&CommandLineArgs{
 					HomePath: "../../",
 					Config:   filepath.Join(HomePath, "pkg/setting/testdata/override_windows.ini"),
 					Args:     []string{`cfg:paths.data=c:\tmp\data`},
 				})
-				So(err, ShouldBeNil)
 
 				So(cfg.DataPath, ShouldEqual, `c:\tmp\data`)
 			} else {
 				cfg := NewCfg()
-				err := cfg.Load(&CommandLineArgs{
+				cfg.Load(&CommandLineArgs{
 					HomePath: "../../",
 					Config:   filepath.Join(HomePath, "pkg/setting/testdata/override.ini"),
 					Args:     []string{"cfg:paths.data=/tmp/data"},
 				})
-				So(err, ShouldBeNil)
 
 				So(cfg.DataPath, ShouldEqual, "/tmp/data")
 			}
@@ -186,21 +176,19 @@ func TestLoadingSettings(t *testing.T) {
 			if runtime.GOOS == windows {
 				os.Setenv("GF_DATA_PATH", `c:\tmp\env_override`)
 				cfg := NewCfg()
-				err := cfg.Load(&CommandLineArgs{
+				cfg.Load(&CommandLineArgs{
 					HomePath: "../../",
 					Args:     []string{"cfg:paths.data=${GF_DATA_PATH}"},
 				})
-				So(err, ShouldBeNil)
 
 				So(cfg.DataPath, ShouldEqual, `c:\tmp\env_override`)
 			} else {
 				os.Setenv("GF_DATA_PATH", "/tmp/env_override")
 				cfg := NewCfg()
-				err := cfg.Load(&CommandLineArgs{
+				cfg.Load(&CommandLineArgs{
 					HomePath: "../../",
 					Args:     []string{"cfg:paths.data=${GF_DATA_PATH}"},
 				})
-				So(err, ShouldBeNil)
 
 				So(cfg.DataPath, ShouldEqual, "/tmp/env_override")
 			}
@@ -208,10 +196,9 @@ func TestLoadingSettings(t *testing.T) {
 
 		Convey("instance_name default to hostname even if hostname env is empty", func() {
 			cfg := NewCfg()
-			err := cfg.Load(&CommandLineArgs{
+			cfg.Load(&CommandLineArgs{
 				HomePath: "../../",
 			})
-			So(err, ShouldBeNil)
 
 			hostname, _ := os.Hostname()
 			So(InstanceName, ShouldEqual, hostname)
@@ -219,57 +206,12 @@ func TestLoadingSettings(t *testing.T) {
 
 		Convey("Reading callback_url should add trailing slash", func() {
 			cfg := NewCfg()
-			err := cfg.Load(&CommandLineArgs{
+			cfg.Load(&CommandLineArgs{
 				HomePath: "../../",
 				Args:     []string{"cfg:rendering.callback_url=http://myserver/renderer"},
 			})
-			So(err, ShouldBeNil)
 
 			So(cfg.RendererCallbackUrl, ShouldEqual, "http://myserver/renderer/")
-		})
-
-		Convey("Only sync_ttl should return the value sync_ttl", func() {
-			cfg := NewCfg()
-			err := cfg.Load(&CommandLineArgs{
-				HomePath: "../../",
-				Args:     []string{"cfg:auth.proxy.sync_ttl=2"},
-			})
-			So(err, ShouldBeNil)
-
-			So(AuthProxySyncTtl, ShouldEqual, 2)
-		})
-
-		Convey("Only ldap_sync_ttl should return the value ldap_sync_ttl", func() {
-			cfg := NewCfg()
-			err := cfg.Load(&CommandLineArgs{
-				HomePath: "../../",
-				Args:     []string{"cfg:auth.proxy.ldap_sync_ttl=5"},
-			})
-			So(err, ShouldBeNil)
-
-			So(AuthProxySyncTtl, ShouldEqual, 5)
-		})
-
-		Convey("ldap_sync should override ldap_sync_ttl that is default value", func() {
-			cfg := NewCfg()
-			err := cfg.Load(&CommandLineArgs{
-				HomePath: "../../",
-				Args:     []string{"cfg:auth.proxy.sync_ttl=5"},
-			})
-			So(err, ShouldBeNil)
-
-			So(AuthProxySyncTtl, ShouldEqual, 5)
-		})
-
-		Convey("ldap_sync should not override ldap_sync_ttl that is different from default value", func() {
-			cfg := NewCfg()
-			err := cfg.Load(&CommandLineArgs{
-				HomePath: "../../",
-				Args:     []string{"cfg:auth.proxy.ldap_sync_ttl=12", "cfg:auth.proxy.sync_ttl=5"},
-			})
-			So(err, ShouldBeNil)
-
-			So(AuthProxySyncTtl, ShouldEqual, 12)
 		})
 	})
 

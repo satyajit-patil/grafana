@@ -1,7 +1,6 @@
 import { DataFrame } from '../../types/dataFrame';
 import { FrameMatcherID } from './ids';
 import { FrameMatcherInfo } from '../../types/transformations';
-import { stringToJsRegex } from '../../text';
 
 // General Field matcher
 const refIdMacher: FrameMatcherInfo<string> = {
@@ -11,9 +10,8 @@ const refIdMacher: FrameMatcherInfo<string> = {
   defaultOptions: 'A',
 
   get: (pattern: string) => {
-    const regex = stringToJsRegex(pattern);
     return (frame: DataFrame) => {
-      return regex.test(frame.refId || '');
+      return pattern === frame.refId;
     };
   },
 

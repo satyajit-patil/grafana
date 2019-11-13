@@ -122,8 +122,7 @@ func TestDeleteExpiredVersions(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			query := m.GetDashboardVersionsQuery{DashboardId: savedDash.Id, OrgId: 1}
-			err = GetDashboardVersions(&query)
-			So(err, ShouldBeNil)
+			GetDashboardVersions(&query)
 
 			So(len(query.Result), ShouldEqual, versionsToKeep)
 			// Ensure latest versions were kept
@@ -138,8 +137,7 @@ func TestDeleteExpiredVersions(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			query := m.GetDashboardVersionsQuery{DashboardId: savedDash.Id, OrgId: 1, Limit: versionsToWrite}
-			err = GetDashboardVersions(&query)
-			So(err, ShouldBeNil)
+			GetDashboardVersions(&query)
 
 			So(len(query.Result), ShouldEqual, versionsToWrite)
 		})
@@ -156,8 +154,7 @@ func TestDeleteExpiredVersions(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			query := m.GetDashboardVersionsQuery{DashboardId: savedDash.Id, OrgId: 1, Limit: versionsToWriteBigNumber}
-			err = GetDashboardVersions(&query)
-			So(err, ShouldBeNil)
+			GetDashboardVersions(&query)
 
 			// Ensure we have at least versionsToKeep versions
 			So(len(query.Result), ShouldBeGreaterThanOrEqualTo, versionsToKeep)

@@ -3,31 +3,36 @@ import React, { PureComponent } from 'react';
 import { hot } from 'react-hot-loader';
 import { connect } from 'react-redux';
 import isString from 'lodash/isString';
+
 // Components
 import Page from 'app/core/components/Page/Page';
-import { GenericDataSourcePlugin, PluginSettings } from './PluginSettings';
+import { PluginSettings, GenericDataSourcePlugin } from './PluginSettings';
 import BasicSettings from './BasicSettings';
 import ButtonRow from './ButtonRow';
+
 // Services & Utils
 import appEvents from 'app/core/app_events';
 import { getBackendSrv } from 'app/core/services/backend_srv';
 import { getDatasourceSrv } from 'app/features/plugins/datasource_srv';
+
 // Actions & selectors
 import { getDataSource, getDataSourceMeta } from '../state/selectors';
 import {
-  dataSourceLoaded,
   deleteDataSource,
   loadDataSource,
   setDataSourceName,
   setIsDefault,
   updateDataSource,
+  dataSourceLoaded,
 } from '../state/actions';
 import { getNavModel } from 'app/core/selectors/navModel';
 import { getRouteParamsId } from 'app/core/selectors/location';
+
 // Types
-import { CoreEvents, StoreState } from 'app/types/';
+import { StoreState } from 'app/types/';
 import { UrlQueryMap } from '@grafana/runtime';
-import { DataSourcePluginMeta, DataSourceSettings, NavModel } from '@grafana/data';
+import { DataSourceSettings, DataSourcePluginMeta } from '@grafana/ui';
+import { NavModel } from '@grafana/data';
 import { getDataSourceLoadingNav } from '../state/navModel';
 import PluginStateinfo from 'app/features/plugins/PluginStateInfo';
 import { importDataSourcePlugin } from 'app/features/plugins/plugin_loader';
@@ -109,7 +114,7 @@ export class DataSourceSettingsPage extends PureComponent<Props, State> {
   };
 
   onDelete = () => {
-    appEvents.emit(CoreEvents.showConfirmModal, {
+    appEvents.emit('confirm-modal', {
       title: 'Delete',
       text: 'Are you sure you want to delete this data source?',
       yesText: 'Delete',

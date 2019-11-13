@@ -51,10 +51,8 @@ func TestAccountDataAccess(t *testing.T) {
 
 				q1 := m.GetUserOrgListQuery{UserId: ac1cmd.Result.Id}
 				q2 := m.GetUserOrgListQuery{UserId: ac2cmd.Result.Id}
-				err = GetUserOrgList(&q1)
-				So(err, ShouldBeNil)
-				err = GetUserOrgList(&q2)
-				So(err, ShouldBeNil)
+				GetUserOrgList(&q1)
+				GetUserOrgList(&q2)
 
 				So(q1.Result[0].OrgId, ShouldEqual, q2.Result[0].OrgId)
 				So(q1.Result[0].Role, ShouldEqual, "Viewer")

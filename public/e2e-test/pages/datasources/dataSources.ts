@@ -1,13 +1,8 @@
-import { ClickablePageObject, ClickablePageObjectType, Selector, TestPage } from '@grafana/toolkit/src/e2e';
+import { TestPage } from '@grafana/toolkit/src/e2e';
 
-export interface DataSourcesPage {
-  testData: ClickablePageObjectType;
-}
+export interface DataSourcesPage {}
 
-export const dataSourcesPageFactory = (testDataSourceName: string) =>
-  new TestPage<DataSourcesPage>({
-    url: '/datasources',
-    pageObjects: {
-      testData: new ClickablePageObject(Selector.fromAriaLabel(`Data source list item for ${testDataSourceName}`)),
-    },
-  });
+export const dataSourcesPage = new TestPage<DataSourcesPage>({
+  url: '/datasources',
+  pageObjects: {},
+});

@@ -3,13 +3,11 @@ import { css, cx } from 'emotion';
 import { LogRowModel, LogLabelStatsModel, calculateLogsLabelStats } from '@grafana/data';
 
 import { LogLabelStats } from './LogLabelStats';
-import { Themeable } from '../../types/theme';
-import { GrafanaTheme } from '@grafana/data';
+import { GrafanaTheme, Themeable } from '../../types/theme';
 import { selectThemeVariant } from '../../themes/selectThemeVariant';
 import { withTheme } from '../../themes/ThemeContext';
-import { stylesFactory } from '../../themes';
 
-const getStyles = stylesFactory((theme: GrafanaTheme) => {
+const getStyles = (theme: GrafanaTheme) => {
   return {
     logsLabel: css`
       label: logs-label;
@@ -45,7 +43,7 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
       box-shadow: 0 0 20px ${selectThemeVariant({ light: theme.colors.white, dark: theme.colors.black }, theme.type)};
     `,
   };
-});
+};
 
 interface Props extends Themeable {
   value: string;
@@ -110,7 +108,13 @@ class UnThemedLogLabel extends PureComponent<Props, State> {
         )}
         {showStats && (
           <span className={cx([styles.logsLabelStats])}>
-            <LogLabelStats stats={stats} rowCount={getRows().length} label={label} value={value} isLabel={true} />
+            <LogLabelStats
+              stats={stats}
+              rowCount={getRows().length}
+              label={label}
+              value={value}
+              onClickClose={this.onClickClose}
+            />
           </span>
         )}
       </span>

@@ -1,6 +1,6 @@
 /* tslint:disable:max-line-length */
 
-import { GrafanaThemeCommons } from '@grafana/data';
+import { GrafanaThemeCommons } from '../types';
 import { renderGeneratedFileBanner } from '../utils/generatedFileBanner';
 
 export const commonThemeVarsTemplate = (theme: GrafanaThemeCommons) =>
@@ -176,7 +176,7 @@ $zindex-typeahead: ${theme.zIndex.typeahead};
 //
 
 $btn-padding-x: 14px !default;
-$btn-padding-y: 8px !default;
+$btn-padding-y: 10px !default;
 $btn-line-height: 1 !default;
 $btn-font-weight: ${theme.typography.weight.semibold} !default;
 
@@ -192,7 +192,7 @@ $btn-padding-y-xl: 11px !default;
 $btn-semi-transparent: rgba(0, 0, 0, 0.2) !default;
 
 // sidemenu
-$side-menu-width: 60px;
+$side-menu-width: 300px;
 $navbar-padding: 20px;
 
 // dashboard

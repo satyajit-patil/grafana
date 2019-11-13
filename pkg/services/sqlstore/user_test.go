@@ -227,21 +227,13 @@ func TestUserDataAccess(t *testing.T) {
 			})
 
 			Convey("when a user is an org member and has been assigned permissions", func() {
-				err := AddOrgUser(&models.AddOrgUserCommand{
-					LoginOrEmail: users[1].Login, Role: models.ROLE_VIEWER,
-					OrgId: users[0].OrgId, UserId: users[1].Id,
-				})
+				err := AddOrgUser(&models.AddOrgUserCommand{LoginOrEmail: users[1].Login, Role: models.ROLE_VIEWER, OrgId: users[0].OrgId, UserId: users[1].Id})
 				So(err, ShouldBeNil)
 
-				err = testHelperUpdateDashboardAcl(1, models.DashboardAcl{
-					DashboardId: 1, OrgId: users[0].OrgId, UserId: users[1].Id,
-					Permission: models.PERMISSION_EDIT,
-				})
+				testHelperUpdateDashboardAcl(1, models.DashboardAcl{DashboardId: 1, OrgId: users[0].OrgId, UserId: users[1].Id, Permission: models.PERMISSION_EDIT})
 				So(err, ShouldBeNil)
 
-				err = SavePreferences(&models.SavePreferencesCommand{
-					UserId: users[1].Id, OrgId: users[0].OrgId, HomeDashboardId: 1, Theme: "dark",
-				})
+				err = SavePreferences(&models.SavePreferencesCommand{UserId: users[1].Id, OrgId: users[0].OrgId, HomeDashboardId: 1, Theme: "dark"})
 				So(err, ShouldBeNil)
 
 				Convey("when the user is deleted", func() {

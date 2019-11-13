@@ -1,13 +1,8 @@
 import _ from 'lodash';
-import {
-  dateTime,
-  getValueFormat,
-  getColorFromHexRgbOrName,
-  GrafanaThemeType,
-  stringToJsRegex,
-  ScopedVars,
-} from '@grafana/data';
+import { getValueFormat, getColorFromHexRgbOrName, GrafanaThemeType } from '@grafana/ui';
+import { stringToJsRegex, ScopedVars } from '@grafana/data';
 import { ColumnStyle } from '@grafana/ui/src/components/Table/TableCellBuilder';
+import { dateTime } from '@grafana/data';
 import { TemplateSrv } from 'app/features/templating/template_srv';
 import { TableRenderModel, ColumnRender } from './types';
 

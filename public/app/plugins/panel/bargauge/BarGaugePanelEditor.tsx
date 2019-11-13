@@ -6,13 +6,15 @@ import {
   ValueMappingsEditor,
   PanelOptionsGrid,
   FieldDisplayEditor,
+  FieldDisplayOptions,
   FieldPropertiesEditor,
   PanelOptionsGroup,
   FormLabel,
+  PanelEditorProps,
   Select,
   DataLinksEditor,
 } from '@grafana/ui';
-import { FieldDisplayOptions, FieldConfig, DataLink, PanelEditorProps } from '@grafana/data';
+import { FieldConfig, DataLink } from '@grafana/data';
 
 import { Threshold, ValueMapping } from '@grafana/data';
 import { BarGaugeOptions, orientationOptions, displayModes } from './types';

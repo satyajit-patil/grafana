@@ -51,11 +51,7 @@ func AddOrgInvite(c *m.ReqContext, inviteDto dtos.AddInviteForm) Response {
 	cmd.Name = inviteDto.Name
 	cmd.Status = m.TmpUserInvitePending
 	cmd.InvitedByUserId = c.UserId
-	var err error
-	cmd.Code, err = util.GetRandomString(30)
-	if err != nil {
-		return Error(500, "Could not generate random string", err)
-	}
+	cmd.Code = util.GetRandomString(30)
 	cmd.Role = inviteDto.Role
 	cmd.RemoteAddr = c.Req.RemoteAddr
 
@@ -181,12 +177,10 @@ func (hs *HTTPServer) CompleteInvite(c *m.ReqContext, completeInvite dtos.Comple
 
 	user := &cmd.Result
 
-	if err := bus.Publish(&events.SignUpCompleted{
+	bus.Publish(&events.SignUpCompleted{
 		Name:  user.NameOrFallback(),
 		Email: user.Email,
-	}); err != nil {
-		return Error(500, "failed to publish event", err)
-	}
+	})
 
 	if ok, rsp := applyUserInvite(user, invite, true); !ok {
 		return rsp

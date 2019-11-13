@@ -124,8 +124,7 @@ func TestUserAuthToken(t *testing.T) {
 					for i := 0; i < 3; i++ {
 						userId := userID + int64(i+1)
 						userIds = append(userIds, userId)
-						_, err := userAuthTokenService.CreateToken(context.Background(), userId, "192.168.10.11:1234", "some user agent")
-						So(err, ShouldBeNil)
+						userAuthTokenService.CreateToken(context.Background(), userId, "192.168.10.11:1234", "some user agent")
 					}
 
 					err := userAuthTokenService.BatchRevokeAllUserTokens(context.Background(), userIds)
@@ -442,8 +441,7 @@ func TestUserAuthToken(t *testing.T) {
 			utMap := utJSON.MustMap()
 
 			var uat userAuthToken
-			err = uat.fromUserToken(&ut)
-			So(err, ShouldBeNil)
+			uat.fromUserToken(&ut)
 			uatBytes, err := json.Marshal(uat)
 			So(err, ShouldBeNil)
 			uatJSON, err := simplejson.NewJson(uatBytes)

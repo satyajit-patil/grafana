@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -108,24 +107,12 @@ func InstallPlugin(pluginName, version string, c utils.CommandLine) error {
 	logger.Infof("into: %v\n", pluginFolder)
 	logger.Info("\n")
 
-	// Create temp file for downloading zip file
-	tmpFile, err := ioutil.TempFile("", "*.zip")
+	content, err := c.ApiClient().DownloadFile(pluginName, pluginFolder, downloadURL, checksum)
 	if err != nil {
-		return errutil.Wrap("Failed to create temporary file", err)
-	}
-	defer os.Remove(tmpFile.Name())
-
-	err = c.ApiClient().DownloadFile(pluginName, tmpFile, downloadURL, checksum)
-	if err != nil {
-		tmpFile.Close()
 		return errutil.Wrap("Failed to download plugin archive", err)
 	}
-	err = tmpFile.Close()
-	if err != nil {
-		return errutil.Wrap("Failed to close tmp file", err)
-	}
 
-	err = extractFiles(tmpFile.Name(), pluginName, pluginFolder, isInternal)
+	err = extractFiles(content, pluginName, pluginFolder, isInternal)
 	if err != nil {
 		return errutil.Wrap("Failed to extract plugin archive", err)
 	}
@@ -134,10 +121,7 @@ func InstallPlugin(pluginName, version string, c utils.CommandLine) error {
 
 	res, _ := s.ReadPlugin(pluginFolder, pluginName)
 	for _, v := range res.Dependencies.Plugins {
-		if err := InstallPlugin(v.Id, "", c); err != nil {
-			return errutil.Wrapf(err, "Failed to install plugin '%s'", v.Id)
-		}
-
+		InstallPlugin(v.Id, "", c)
 		logger.Infof("Installed dependency: %v ✔\n", v.Id)
 	}
 
@@ -210,10 +194,8 @@ func RemoveGitBuildFromName(pluginName, filename string) string {
 
 var permissionsDeniedMessage = "Could not create %s. Permission denied. Make sure you have write access to plugindir"
 
-func extractFiles(archiveFile string, pluginName string, filePath string, allowSymlinks bool) error {
-	logger.Debugf("Extracting archive %v to %v...\n", archiveFile, filePath)
-
-	r, err := zip.OpenReader(archiveFile)
+func extractFiles(body []byte, pluginName string, filePath string, allowSymlinks bool) error {
+	r, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
 	if err != nil {
 		return err
 	}

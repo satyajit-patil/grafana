@@ -216,22 +216,20 @@ func TestTeamCommandsAndQueries(t *testing.T) {
 				})
 
 				Convey("A user should be able to remove an admin if there are other admins", func() {
-					err = AddTeamMember(&models.AddTeamMemberCommand{OrgId: testOrgId, TeamId: group1.Result.Id, UserId: userIds[1], Permission: models.PERMISSION_ADMIN})
-					So(err, ShouldBeNil)
+					AddTeamMember(&models.AddTeamMemberCommand{OrgId: testOrgId, TeamId: group1.Result.Id, UserId: userIds[1], Permission: models.PERMISSION_ADMIN})
 					err = RemoveTeamMember(&models.RemoveTeamMemberCommand{OrgId: testOrgId, TeamId: group1.Result.Id, UserId: userIds[0], ProtectLastAdmin: true})
-					So(err, ShouldBeNil)
+					So(err, ShouldEqual, nil)
 				})
 
 				Convey("A user should not be able to remove the admin permission for the last admin", func() {
 					err = UpdateTeamMember(&models.UpdateTeamMemberCommand{OrgId: testOrgId, TeamId: group1.Result.Id, UserId: userIds[0], Permission: 0, ProtectLastAdmin: true})
-					So(err, ShouldBeError, models.ErrLastTeamAdmin)
+					So(err, ShouldEqual, models.ErrLastTeamAdmin)
 				})
 
 				Convey("A user should be able to remove the admin permission if there are other admins", func() {
-					err = AddTeamMember(&models.AddTeamMemberCommand{OrgId: testOrgId, TeamId: group1.Result.Id, UserId: userIds[1], Permission: models.PERMISSION_ADMIN})
-					So(err, ShouldBeNil)
+					AddTeamMember(&models.AddTeamMemberCommand{OrgId: testOrgId, TeamId: group1.Result.Id, UserId: userIds[1], Permission: models.PERMISSION_ADMIN})
 					err = UpdateTeamMember(&models.UpdateTeamMemberCommand{OrgId: testOrgId, TeamId: group1.Result.Id, UserId: userIds[0], Permission: 0, ProtectLastAdmin: true})
-					So(err, ShouldBeNil)
+					So(err, ShouldEqual, nil)
 				})
 			})
 

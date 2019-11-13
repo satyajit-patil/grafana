@@ -68,8 +68,7 @@ func TestMySQL(t *testing.T) {
 		Convey("Given a table with different native data types", func() {
 			if exists, err := sess.IsTableExist("mysql_types"); err != nil || exists {
 				So(err, ShouldBeNil)
-				err = sess.DropTable("mysql_types")
-				So(err, ShouldBeNil)
+				sess.DropTable("mysql_types")
 			}
 
 			sql := "CREATE TABLE `mysql_types` ("
@@ -182,8 +181,7 @@ func TestMySQL(t *testing.T) {
 
 			if exist, err := sess.IsTableExist(metric{}); err != nil || exist {
 				So(err, ShouldBeNil)
-				err = sess.DropTable(metric{})
-				So(err, ShouldBeNil)
+				sess.DropTable(metric{})
 			}
 			err := sess.CreateTable(metric{})
 			So(err, ShouldBeNil)
@@ -415,8 +413,7 @@ func TestMySQL(t *testing.T) {
 
 			if exist, err := sess.IsTableExist(metric_values{}); err != nil || exist {
 				So(err, ShouldBeNil)
-				err = sess.DropTable(metric_values{})
-				So(err, ShouldBeNil)
+				sess.DropTable(metric_values{})
 			}
 			err := sess.CreateTable(metric_values{})
 			So(err, ShouldBeNil)
@@ -791,8 +788,7 @@ func TestMySQL(t *testing.T) {
 
 			if exist, err := sess.IsTableExist(event{}); err != nil || exist {
 				So(err, ShouldBeNil)
-				err = sess.DropTable(event{})
-				So(err, ShouldBeNil)
+				sess.DropTable(event{})
 			}
 			err := sess.CreateTable(event{})
 			So(err, ShouldBeNil)

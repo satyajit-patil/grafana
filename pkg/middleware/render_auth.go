@@ -33,14 +33,10 @@ func initContextWithRenderAuth(ctx *m.ReqContext) bool {
 	return true
 }
 
-func AddRenderAuthKey(orgId int64, userId int64, orgRole m.RoleType) (string, error) {
+func AddRenderAuthKey(orgId int64, userId int64, orgRole m.RoleType) string {
 	renderKeysLock.Lock()
-	defer renderKeysLock.Unlock()
 
-	key, err := util.GetRandomString(32)
-	if err != nil {
-		return "", err
-	}
+	key := util.GetRandomString(32)
 
 	renderKeys[key] = &m.SignedInUser{
 		OrgId:   orgId,
@@ -48,12 +44,13 @@ func AddRenderAuthKey(orgId int64, userId int64, orgRole m.RoleType) (string, er
 		UserId:  userId,
 	}
 
-	return key, nil
+	renderKeysLock.Unlock()
+
+	return key
 }
 
 func RemoveRenderAuthKey(key string) {
 	renderKeysLock.Lock()
-	defer renderKeysLock.Unlock()
-
 	delete(renderKeys, key)
+	renderKeysLock.Unlock()
 }

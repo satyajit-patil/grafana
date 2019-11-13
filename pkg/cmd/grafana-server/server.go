@@ -39,30 +39,22 @@ import (
 	_ "github.com/grafana/grafana/pkg/services/search"
 	_ "github.com/grafana/grafana/pkg/services/sqlstore"
 	"github.com/grafana/grafana/pkg/setting"
-	"github.com/grafana/grafana/pkg/util/errutil"
-	"golang.org/x/xerrors"
 )
 
-// NewServer returns a new instance of Server.
-func NewServer(configFile, homePath, pidFile string) *Server {
+func NewGrafanaServer() *GrafanaServerImpl {
 	rootCtx, shutdownFn := context.WithCancel(context.Background())
 	childRoutines, childCtx := errgroup.WithContext(rootCtx)
 
-	return &Server{
+	return &GrafanaServerImpl{
 		context:       childCtx,
 		shutdownFn:    shutdownFn,
 		childRoutines: childRoutines,
 		log:           log.New("server"),
 		cfg:           setting.NewCfg(),
-
-		configFile: configFile,
-		homePath:   homePath,
-		pidFile:    pidFile,
 	}
 }
 
-// Server is responsible for managing the lifecycle of services.
-type Server struct {
+type GrafanaServerImpl struct {
 	context            context.Context
 	shutdownFn         context.CancelFunc
 	childRoutines      *errgroup.Group
@@ -71,220 +63,195 @@ type Server struct {
 	shutdownReason     string
 	shutdownInProgress bool
 
-	configFile string
-	homePath   string
-	pidFile    string
-
 	RouteRegister routing.RouteRegister `inject:""`
-	HTTPServer    *api.HTTPServer       `inject:""`
+	HttpServer    *api.HTTPServer       `inject:""`
 }
 
-// Run initializes and starts services. This will block until all services have
-// exited. To initiate shutdown, call the Shutdown method in another goroutine.
-func (s *Server) Run() (err error) {
-	s.loadConfiguration()
-	s.writePIDFile()
+func (g *GrafanaServerImpl) Run() error {
+	var err error
+	g.loadConfiguration()
+	g.writePIDFile()
 
 	login.Init()
 	social.NewOAuthService()
 
-	services := registry.GetServices()
-
-	if err = s.buildServiceGraph(services); err != nil {
-		return
+	serviceGraph := inject.Graph{}
+	err = serviceGraph.Provide(&inject.Object{Value: bus.GetBus()})
+	if err != nil {
+		return fmt.Errorf("Failed to provide object to the graph: %v", err)
+	}
+	err = serviceGraph.Provide(&inject.Object{Value: g.cfg})
+	if err != nil {
+		return fmt.Errorf("Failed to provide object to the graph: %v", err)
+	}
+	err = serviceGraph.Provide(&inject.Object{Value: routing.NewRouteRegister(middleware.RequestMetrics, middleware.RequestTracing)})
+	if err != nil {
+		return fmt.Errorf("Failed to provide object to the graph: %v", err)
+	}
+	err = serviceGraph.Provide(&inject.Object{Value: localcache.New(5*time.Minute, 10*time.Minute)})
+	if err != nil {
+		return fmt.Errorf("Failed to provide object to the graph: %v", err)
 	}
 
-	// Initialize services.
+	// self registered services
+	services := registry.GetServices()
+
+	// Add all services to dependency graph
+	for _, service := range services {
+		err = serviceGraph.Provide(&inject.Object{Value: service.Instance})
+		if err != nil {
+			return fmt.Errorf("Failed to provide object to the graph: %v", err)
+		}
+	}
+
+	err = serviceGraph.Provide(&inject.Object{Value: g})
+	if err != nil {
+		return fmt.Errorf("Failed to provide object to the graph: %v", err)
+	}
+
+	// Inject dependencies to services
+	if err := serviceGraph.Populate(); err != nil {
+		return fmt.Errorf("Failed to populate service dependency: %v", err)
+	}
+
+	// Init & start services
 	for _, service := range services {
 		if registry.IsDisabled(service.Instance) {
 			continue
 		}
 
-		s.log.Info("Initializing " + service.Name)
+		g.log.Info("Initializing " + service.Name)
 
 		if err := service.Instance.Init(); err != nil {
 			return fmt.Errorf("Service init failed: %v", err)
 		}
 	}
 
-	// Start background services.
-	for _, svc := range services {
-		service, ok := svc.Instance.(registry.BackgroundService)
+	// Start background services
+	for _, srv := range services {
+		// variable needed for accessing loop variable in function callback
+		descriptor := srv
+		service, ok := srv.Instance.(registry.BackgroundService)
 		if !ok {
 			continue
 		}
 
-		if registry.IsDisabled(svc.Instance) {
+		if registry.IsDisabled(descriptor.Instance) {
 			continue
 		}
 
-		// Variable is needed for accessing loop variable in callback
-		descriptor := svc
-		s.childRoutines.Go(func() error {
-			// Don't start new services when server is shutting down.
-			if s.shutdownInProgress {
+		g.childRoutines.Go(func() error {
+			// Skip starting new service when shutting down
+			// Can happen when service stop/return during startup
+			if g.shutdownInProgress {
 				return nil
 			}
 
-			if err := service.Run(s.context); err != nil {
-				if err != context.Canceled {
-					// Server has crashed.
-					s.log.Error("Stopped "+descriptor.Name, "reason", err)
-				} else {
-					s.log.Info("Stopped "+descriptor.Name, "reason", err)
-				}
+			err := service.Run(g.context)
+
+			// If error is not canceled then the service crashed
+			if err != context.Canceled && err != nil {
+				g.log.Error("Stopped "+descriptor.Name, "reason", err)
+			} else {
+				g.log.Info("Stopped "+descriptor.Name, "reason", err)
 			}
 
 			// Mark that we are in shutdown mode
 			// So more services are not started
-			s.shutdownInProgress = true
-			return nil
+			g.shutdownInProgress = true
+			return err
 		})
 	}
 
-	defer func() {
-		s.log.Debug("Waiting on services...")
-		if waitErr := s.childRoutines.Wait(); waitErr != nil && !xerrors.Is(waitErr, context.Canceled) {
-			s.log.Error("A service failed", "err", waitErr)
-			if err == nil {
-				err = waitErr
-			}
-		}
-	}()
+	sendSystemdNotification("READY=1")
 
-	s.notifySystemd("READY=1")
-
-	return
+	return g.childRoutines.Wait()
 }
 
-func (s *Server) Shutdown(reason string) {
-	s.log.Info("Shutdown started", "reason", reason)
-	s.shutdownReason = reason
-	s.shutdownInProgress = true
-
-	// call cancel func on root context
-	s.shutdownFn()
-
-	// wait for child routines
-	if err := s.childRoutines.Wait(); err != nil && !xerrors.Is(err, context.Canceled) {
-		s.log.Error("Failed waiting for services to shutdown", "err", err)
-	}
-}
-
-// ExitCode returns an exit code for a given error.
-func (s *Server) ExitCode(reason error) int {
-	code := 1
-
-	if reason == context.Canceled && s.shutdownReason != "" {
-		reason = fmt.Errorf(s.shutdownReason)
-		code = 0
-	}
-
-	s.log.Error("Server shutdown", "reason", reason)
-
-	return code
-}
-
-// writePIDFile retrieves the current process ID and writes it to file.
-func (s *Server) writePIDFile() {
-	if s.pidFile == "" {
-		return
-	}
-
-	// Ensure the required directory structure exists.
-	err := os.MkdirAll(filepath.Dir(s.pidFile), 0700)
-	if err != nil {
-		s.log.Error("Failed to verify pid directory", "error", err)
-		os.Exit(1)
-	}
-
-	// Retrieve the PID and write it to file.
-	pid := strconv.Itoa(os.Getpid())
-	if err := ioutil.WriteFile(s.pidFile, []byte(pid), 0644); err != nil {
-		s.log.Error("Failed to write pidfile", "error", err)
-		os.Exit(1)
-	}
-
-	s.log.Info("Writing PID file", "path", s.pidFile, "pid", pid)
-}
-
-// buildServiceGraph builds a graph of services and their dependencies.
-func (s *Server) buildServiceGraph(services []*registry.Descriptor) error {
-	// Specify service dependencies.
-	objs := []interface{}{
-		bus.GetBus(),
-		s.cfg,
-		routing.NewRouteRegister(middleware.RequestMetrics, middleware.RequestTracing),
-		localcache.New(5*time.Minute, 10*time.Minute),
-		s,
-	}
-
-	for _, service := range services {
-		objs = append(objs, service.Instance)
-	}
-
-	var serviceGraph inject.Graph
-
-	// Provide services and their dependencies to the graph.
-	for _, obj := range objs {
-		if err := serviceGraph.Provide(&inject.Object{Value: obj}); err != nil {
-			return errutil.Wrapf(err, "Failed to provide object to the graph")
-		}
-	}
-
-	// Resolve services and their dependencies.
-	if err := serviceGraph.Populate(); err != nil {
-		return errutil.Wrapf(err, "Failed to populate service dependency")
-	}
-
-	return nil
-}
-
-// loadConfiguration loads settings and configuration from config files.
-func (s *Server) loadConfiguration() {
-	args := &setting.CommandLineArgs{
-		Config:   s.configFile,
-		HomePath: s.homePath,
+func (g *GrafanaServerImpl) loadConfiguration() {
+	err := g.cfg.Load(&setting.CommandLineArgs{
+		Config:   *configFile,
+		HomePath: *homePath,
 		Args:     flag.Args(),
-	}
+	})
 
-	if err := s.cfg.Load(args); err != nil {
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to start grafana. error: %s\n", err.Error())
 		os.Exit(1)
 	}
 
-	s.log.Info("Starting "+setting.ApplicationName,
-		"version", version,
-		"commit", commit,
-		"branch", buildBranch,
-		"compiled", time.Unix(setting.BuildStamp, 0),
-	)
-
-	s.cfg.LogConfigSources()
+	g.log.Info("Starting "+setting.ApplicationName, "version", version, "commit", commit, "branch", buildBranch, "compiled", time.Unix(setting.BuildStamp, 0))
+	g.cfg.LogConfigSources()
 }
 
-// notifySystemd sends state notifications to systemd.
-func (s *Server) notifySystemd(state string) {
-	notifySocket := os.Getenv("NOTIFY_SOCKET")
-	if notifySocket == "" {
-		s.log.Debug(
-			"NOTIFY_SOCKET environment variable empty or unset, can't send systemd notification")
+func (g *GrafanaServerImpl) Shutdown(reason string) {
+	g.log.Info("Shutdown started", "reason", reason)
+	g.shutdownReason = reason
+	g.shutdownInProgress = true
+
+	// call cancel func on root context
+	g.shutdownFn()
+
+	// wait for child routines
+	g.childRoutines.Wait()
+}
+
+func (g *GrafanaServerImpl) Exit(reason error) int {
+	// default exit code is 1
+	code := 1
+
+	if reason == context.Canceled && g.shutdownReason != "" {
+		reason = fmt.Errorf(g.shutdownReason)
+		code = 0
+	}
+
+	g.log.Error("Server shutdown", "reason", reason)
+	return code
+}
+
+func (g *GrafanaServerImpl) writePIDFile() {
+	if *pidFile == "" {
 		return
+	}
+
+	// Ensure the required directory structure exists.
+	err := os.MkdirAll(filepath.Dir(*pidFile), 0700)
+	if err != nil {
+		g.log.Error("Failed to verify pid directory", "error", err)
+		os.Exit(1)
+	}
+
+	// Retrieve the PID and write it.
+	pid := strconv.Itoa(os.Getpid())
+	if err := ioutil.WriteFile(*pidFile, []byte(pid), 0644); err != nil {
+		g.log.Error("Failed to write pidfile", "error", err)
+		os.Exit(1)
+	}
+
+	g.log.Info("Writing PID file", "path", *pidFile, "pid", pid)
+}
+
+func sendSystemdNotification(state string) error {
+	notifySocket := os.Getenv("NOTIFY_SOCKET")
+
+	if notifySocket == "" {
+		return fmt.Errorf("NOTIFY_SOCKET environment variable empty or unset")
 	}
 
 	socketAddr := &net.UnixAddr{
 		Name: notifySocket,
 		Net:  "unixgram",
 	}
+
 	conn, err := net.DialUnix(socketAddr.Net, nil, socketAddr)
+
 	if err != nil {
-		s.log.Warn("Failed to connect to systemd", "err", err, "socket", notifySocket)
-		return
+		return err
 	}
-	defer conn.Close()
 
 	_, err = conn.Write([]byte(state))
-	if err != nil {
-		s.log.Warn("Failed to write notification to systemd", "err", err)
-	}
+
+	conn.Close()
+
+	return err
 }

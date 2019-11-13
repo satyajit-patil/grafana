@@ -1,10 +1,7 @@
 import defaults from 'lodash/defaults';
+import { DataQueryRequest, DataQueryResponse, DataQueryError, DataStreamObserver, DataStreamState } from '@grafana/ui';
+
 import {
-  DataQueryRequest,
-  DataQueryResponse,
-  DataQueryError,
-  DataStreamObserver,
-  DataStreamState,
   FieldType,
   Field,
   LoadingState,

@@ -1,25 +1,14 @@
 import React, { useState } from 'react';
 
+import { storiesOf } from '@storybook/react';
+import { withCenteredStory } from '../../utils/storybook/withCenteredStory';
 import { Switch } from './Switch';
 import { text } from '@storybook/addon-knobs';
-import mdx from './Switch.mdx';
-
-const getStory = (title: string, component: any) => ({
-  title,
-  parameters: {
-    component,
-    docs: {
-      page: mdx,
-    },
-  },
-});
-
-export default getStory('UI|Switch', Switch);
 
 const getKnobs = () => {
   return {
     label: text('Label Text', 'Label'),
-    tooltip: text('Tooltip', ''),
+    tooltip: text('Tooltip', null),
   };
 };
 
@@ -29,4 +18,6 @@ const SwitchWrapper = () => {
   return <Switch label={label} checked={checked} onChange={() => setChecked(!checked)} tooltip={tooltip} />;
 };
 
-export const basic = () => <SwitchWrapper />;
+const story = storiesOf('UI/Switch', module);
+story.addDecorator(withCenteredStory);
+story.add('switch', () => <SwitchWrapper />);

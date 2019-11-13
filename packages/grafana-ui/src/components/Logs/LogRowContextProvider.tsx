@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import flatten from 'lodash/flatten';
 import useAsync from 'react-use/lib/useAsync';
 
-import { DataQueryResponse, DataQueryError } from '@grafana/data';
+import { DataQueryResponse, DataQueryError } from '../../types/datasource';
 
 export interface LogRowContextRows {
   before?: string[];

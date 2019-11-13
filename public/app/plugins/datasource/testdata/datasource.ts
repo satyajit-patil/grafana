@@ -1,20 +1,18 @@
+import _ from 'lodash';
 import {
-  DataQueryRequest,
-  DataQueryResponse,
   DataSourceApi,
+  DataQueryRequest,
   DataSourceInstanceSettings,
+  DataQueryResponse,
   MetricFindValue,
-  TableData,
-  TimeSeries,
-  DataQueryError,
-} from '@grafana/data';
-import { Scenario, TestDataQuery } from './types';
+} from '@grafana/ui';
+import { TableData, TimeSeries } from '@grafana/data';
+import { TestDataQuery, Scenario } from './types';
 import { getBackendSrv } from 'app/core/services/backend_srv';
 import { queryMetricTree } from './metricTree';
-import { from, merge, Observable } from 'rxjs';
+import { Observable, from, merge } from 'rxjs';
 import { runStream } from './runStreams';
 import templateSrv from 'app/features/templating/template_srv';
-import { getSearchFilterScopedVar } from '../../../features/templating/variable';
 
 type TestData = TimeSeries | TableData;
 
@@ -29,9 +27,6 @@ export class TestDataDataSource extends DataSourceApi<TestDataQuery> {
 
     // Start streams and prepare queries
     for (const target of options.targets) {
-      if (target.hide) {
-        continue;
-      }
       if (target.scenarioId === 'streaming_client') {
         streams.push(runStream(target, options));
       } else {
@@ -68,7 +63,6 @@ export class TestDataDataSource extends DataSourceApi<TestDataQuery> {
 
   processQueryResult(queries: any, res: any): DataQueryResponse {
     const data: TestData[] = [];
-    let error: DataQueryError | undefined = undefined;
 
     for (const query of queries) {
       const results = res.data.results[query.refId];
@@ -83,15 +77,9 @@ export class TestDataDataSource extends DataSourceApi<TestDataQuery> {
       for (const series of results.series || []) {
         data.push({ target: series.name, datapoints: series.points, refId: query.refId, tags: series.tags });
       }
-
-      if (results.error) {
-        error = {
-          message: results.error,
-        };
-      }
     }
 
-    return { data, error };
+    return { data };
   }
 
   annotationQuery(options: any) {
@@ -131,14 +119,10 @@ export class TestDataDataSource extends DataSourceApi<TestDataQuery> {
     return getBackendSrv().get('/api/tsdb/testdata/scenarios');
   }
 
-  metricFindQuery(query: string, options: any) {
+  metricFindQuery(query: string) {
     return new Promise<MetricFindValue[]>((resolve, reject) => {
       setTimeout(() => {
-        const interpolatedQuery = templateSrv.replace(
-          query,
-          getSearchFilterScopedVar({ query, wildcardChar: '*', options })
-        );
-        const children = queryMetricTree(interpolatedQuery);
+        const children = queryMetricTree(templateSrv.replace(query));
         const items = children.map(item => ({ value: item.name, text: item.name }));
         resolve(items);
       }, 100);

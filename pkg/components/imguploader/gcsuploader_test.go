@@ -11,10 +11,9 @@ import (
 func TestUploadToGCS(t *testing.T) {
 	SkipConvey("[Integration test] for external_image_store.gcs", t, func() {
 		cfg := setting.NewCfg()
-		err := cfg.Load(&setting.CommandLineArgs{
+		cfg.Load(&setting.CommandLineArgs{
 			HomePath: "../../../",
 		})
-		So(err, ShouldBeNil)
 
 		gcsUploader, _ := NewImageUploader()
 

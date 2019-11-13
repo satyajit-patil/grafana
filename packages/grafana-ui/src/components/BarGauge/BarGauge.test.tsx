@@ -10,7 +10,7 @@ import {
   getTitleStyles,
   getValuePercent,
 } from './BarGauge';
-import { VizOrientation } from '@grafana/data';
+import { VizOrientation } from '../../types';
 import { getTheme } from '../../themes';
 
 // jest.mock('jquery', () => ({

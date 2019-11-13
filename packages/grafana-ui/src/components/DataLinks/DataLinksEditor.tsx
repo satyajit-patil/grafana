@@ -1,14 +1,14 @@
 // Libraries
-import React, { FC } from 'react';
+import React, { FC, useContext } from 'react';
 // @ts-ignore
 import Prism from 'prismjs';
 // Components
 import { css } from 'emotion';
 import { DataLink } from '@grafana/data';
+import { ThemeContext } from '../../index';
 import { Button } from '../index';
 import { DataLinkEditor } from './DataLinkEditor';
 import { VariableSuggestion } from './DataLinkSuggestions';
-import { useTheme } from '../../themes/ThemeContext';
 
 interface DataLinksEditorProps {
   value: DataLink[];
@@ -17,17 +17,14 @@ interface DataLinksEditorProps {
   maxLinks?: number;
 }
 
-export const enableDatalinksPrismSyntax = () => {
-  Prism.languages['links'] = {
-    builtInVariable: {
-      pattern: /(\${\S+?})/,
-    },
-  };
+Prism.languages['links'] = {
+  builtInVariable: {
+    pattern: /(\${\S+?})/,
+  },
 };
 
 export const DataLinksEditor: FC<DataLinksEditorProps> = React.memo(({ value, onChange, suggestions, maxLinks }) => {
-  const theme = useTheme();
-  enableDatalinksPrismSyntax();
+  const theme = useContext(ThemeContext);
 
   const onAdd = () => {
     onChange(value ? [...value, { url: '', title: '' }] : [{ url: '', title: '' }]);

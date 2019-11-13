@@ -1,69 +1,54 @@
 import _ from 'lodash';
-import {
-  assignModelProperties,
-  containsVariable,
-  QueryVariableModel,
-  VariableActions,
-  VariableHide,
-  VariableOption,
-  VariableRefresh,
-  VariableSort,
-  VariableTag,
-  VariableType,
-  variableTypes,
-} from './variable';
+import { Variable, containsVariable, assignModelProperties, variableTypes } from './variable';
 import { stringToJsRegex } from '@grafana/data';
 import DatasourceSrv from '../plugins/datasource_srv';
 import { TemplateSrv } from './template_srv';
 import { VariableSrv } from './variable_srv';
 import { TimeSrv } from '../dashboard/services/TimeSrv';
 
-function getNoneOption(): VariableOption {
-  return { text: 'None', value: '', isNone: true, selected: false };
+function getNoneOption() {
+  return { text: 'None', value: '', isNone: true };
 }
 
-export class QueryVariable implements QueryVariableModel, VariableActions {
-  type: VariableType;
+export class QueryVariable implements Variable {
+  datasource: any;
+  query: any;
+  regex: any;
+  sort: any;
+  options: any;
+  current: any;
+  refresh: number;
+  hide: number;
   name: string;
-  label: string;
-  hide: VariableHide;
-  skipUrlSync: boolean;
-  datasource: string;
-  query: string;
-  regex: string;
-  sort: VariableSort;
-  options: VariableOption[];
-  current: VariableOption;
-  refresh: VariableRefresh;
   multi: boolean;
   includeAll: boolean;
   useTags: boolean;
   tagsQuery: string;
   tagValuesQuery: string;
-  tags: VariableTag[];
+  tags: any[];
+  skipUrlSync: boolean;
   definition: string;
-  allValue: string;
 
-  defaults: QueryVariableModel = {
+  defaults: any = {
     type: 'query',
-    name: '',
     label: null,
-    hide: VariableHide.dontHide,
-    skipUrlSync: false,
-    datasource: null,
     query: '',
     regex: '',
-    sort: VariableSort.disabled,
-    refresh: VariableRefresh.never,
+    sort: 0,
+    datasource: null,
+    refresh: 0,
+    hide: 0,
+    name: '',
     multi: false,
     includeAll: false,
     allValue: null,
     options: [],
-    current: {} as VariableOption,
+    current: {},
     tags: [],
     useTags: false,
     tagsQuery: '',
     tagValuesQuery: '',
+    skipUrlSync: false,
     definition: '',
   };
 
@@ -77,7 +62,6 @@ export class QueryVariable implements QueryVariableModel, VariableActions {
   ) {
     // copy model properties to this instance
     assignModelProperties(this, model, this.defaults);
-    this.updateOptionsFromMetricFindQuery.bind(this);
   }
 
   getSaveModel() {
@@ -107,10 +91,10 @@ export class QueryVariable implements QueryVariableModel, VariableActions {
     return this.current.value;
   }
 
-  updateOptions(searchFilter?: string) {
+  updateOptions() {
     return this.datasourceSrv
       .get(this.datasource)
-      .then(ds => this.updateOptionsFromMetricFindQuery(ds, searchFilter))
+      .then(this.updateOptionsFromMetricFindQuery.bind(this))
       .then(this.updateTags.bind(this))
       .then(this.variableSrv.validateVariableSelectionState.bind(this.variableSrv, this));
   }
@@ -142,8 +126,8 @@ export class QueryVariable implements QueryVariableModel, VariableActions {
     });
   }
 
-  updateOptionsFromMetricFindQuery(datasource: any, searchFilter?: string) {
-    return this.metricFindQuery(datasource, this.query, searchFilter).then((results: any) => {
+  updateOptionsFromMetricFindQuery(datasource: any) {
+    return this.metricFindQuery(datasource, this.query).then((results: any) => {
       this.options = this.metricNamesToVariableValues(results);
       if (this.includeAll) {
         this.addAllOption();
@@ -155,8 +139,8 @@ export class QueryVariable implements QueryVariableModel, VariableActions {
     });
   }
 
-  metricFindQuery(datasource: any, query: string, searchFilter?: string) {
-    const options: any = { range: undefined, variable: this, searchFilter };
+  metricFindQuery(datasource: any, query: string) {
+    const options: any = { range: undefined, variable: this };
 
     if (this.refresh === 2) {
       options.range = this.timeSrv.timeRange();
@@ -166,7 +150,7 @@ export class QueryVariable implements QueryVariableModel, VariableActions {
   }
 
   addAllOption() {
-    this.options.unshift({ text: 'All', value: '$__all', selected: false });
+    this.options.unshift({ text: 'All', value: '$__all' });
   }
 
   metricNamesToVariableValues(metricNames: any[]) {

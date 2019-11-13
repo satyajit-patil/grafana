@@ -1,7 +1,8 @@
 import React, { PureComponent } from 'react';
 
 import ElapsedTime from './ElapsedTime';
-import { PanelData, LoadingState } from '@grafana/data';
+import { LoadingState } from '@grafana/data';
+import { PanelData } from '@grafana/ui';
 
 function formatLatency(value: number) {
   return `${(value / 1000).toFixed(1)}s`;

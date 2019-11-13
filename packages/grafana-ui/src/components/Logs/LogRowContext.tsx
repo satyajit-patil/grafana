@@ -4,9 +4,9 @@ import { css, cx } from 'emotion';
 
 import { Alert } from '../Alert/Alert';
 import { LogRowContextRows, LogRowContextQueryErrors, HasMoreContextRows } from './LogRowContextProvider';
-import { GrafanaTheme } from '@grafana/data';
+import { GrafanaTheme } from '../../types/theme';
 import { selectThemeVariant } from '../../themes/selectThemeVariant';
-import { DataQueryError } from '@grafana/data';
+import { DataQueryError } from '../../types/datasource';
 import { ThemeContext } from '../../themes/ThemeContext';
 import { CustomScrollbar } from '../CustomScrollbar/CustomScrollbar';
 import { List } from '../List/List';

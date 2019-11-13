@@ -7,28 +7,19 @@ import { FormLabel } from '../FormLabel/FormLabel';
 import { UnitPicker } from '../UnitPicker/UnitPicker';
 
 // Types
-import {
-  VAR_SERIES_NAME,
-  VAR_FIELD_NAME,
-  VAR_CALC,
-  VAR_CELL_PREFIX,
-  toIntegerOrUndefined,
-  SelectableValue,
-  FieldConfig,
-  toFloatOrUndefined,
-  toNumberString,
-} from '@grafana/data';
+import { toIntegerOrUndefined, SelectableValue, FieldConfig, toFloatOrUndefined, toNumberString } from '@grafana/data';
+
+import { VAR_SERIES_NAME, VAR_FIELD_NAME, VAR_CALC, VAR_CELL_PREFIX } from '../../utils/fieldDisplay';
 
 const labelWidth = 6;
 
 export interface Props {
-  showMinMax?: boolean;
-  showTitle?: boolean;
+  showMinMax: boolean;
   value: FieldConfig;
   onChange: (value: FieldConfig, event?: React.SyntheticEvent<HTMLElement>) => void;
 }
 
-export const FieldPropertiesEditor: React.FC<Props> = ({ value, onChange, showMinMax, showTitle }) => {
+export const FieldPropertiesEditor: React.FC<Props> = ({ value, onChange, showMinMax }) => {
   const { unit, title } = value;
 
   const [decimals, setDecimals] = useState(
@@ -89,16 +80,14 @@ export const FieldPropertiesEditor: React.FC<Props> = ({ value, onChange, showMi
 
   return (
     <>
-      {showTitle && (
-        <FormField
-          label="Title"
-          labelWidth={labelWidth}
-          onChange={onTitleChange}
-          value={title}
-          tooltip={titleTooltip}
-          placeholder="Auto"
-        />
-      )}
+      <FormField
+        label="Title"
+        labelWidth={labelWidth}
+        onChange={onTitleChange}
+        value={title}
+        tooltip={titleTooltip}
+        placeholder="Auto"
+      />
 
       <div className="gf-form">
         <FormLabel width={labelWidth}>Unit</FormLabel>

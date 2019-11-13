@@ -6,7 +6,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/grafana/grafana/pkg/infra/log"
-	"github.com/grafana/grafana/pkg/util/errutil"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -100,14 +99,12 @@ func (mg *Migrator) Start() error {
 			if err != nil {
 				mg.Logger.Error("Exec failed", "error", err, "sql", sql)
 				record.Error = err.Error()
-				if _, err := sess.Insert(&record); err != nil {
-					return err
-				}
+				sess.Insert(&record)
 				return err
 			}
 			record.Success = true
-			_, err = sess.Insert(&record)
-			return err
+			sess.Insert(&record)
+			return nil
 		})
 
 		if err != nil {
@@ -161,22 +158,21 @@ func (mg *Migrator) exec(m Migration, sess *xorm.Session) error {
 type dbTransactionFunc func(sess *xorm.Session) error
 
 func (mg *Migrator) inTransaction(callback dbTransactionFunc) error {
+	var err error
+
 	sess := mg.x.NewSession()
 	defer sess.Close()
 
-	if err := sess.Begin(); err != nil {
+	if err = sess.Begin(); err != nil {
 		return err
 	}
 
-	if err := callback(sess); err != nil {
-		if rollErr := sess.Rollback(); err != rollErr {
-			return errutil.Wrapf(err, "Failed to roll back transaction due to error: %s", rollErr)
-		}
+	err = callback(sess)
 
+	if err != nil {
+		sess.Rollback()
 		return err
-	}
-
-	if err := sess.Commit(); err != nil {
+	} else if err = sess.Commit(); err != nil {
 		return err
 	}
 

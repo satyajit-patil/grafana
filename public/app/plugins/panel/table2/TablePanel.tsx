@@ -2,8 +2,7 @@
 import React, { Component } from 'react';
 
 // Types
-import { ThemeContext } from '@grafana/ui';
-import { PanelProps } from '@grafana/data';
+import { PanelProps, ThemeContext } from '@grafana/ui';
 import { Options } from './types';
 import Table from '@grafana/ui/src/components/Table/Table';
 

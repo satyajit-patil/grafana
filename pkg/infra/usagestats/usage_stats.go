@@ -32,7 +32,7 @@ func (uss *UsageStatsService) sendUsageStats(oauthProviders map[string]bool) {
 		"metrics":   metrics,
 		"os":        runtime.GOOS,
 		"arch":      runtime.GOARCH,
-		"edition":   getEdition(uss.License.HasValidLicense()),
+		"edition":   getEdition(),
 		"packaging": setting.Packaging,
 	}
 
@@ -151,11 +151,7 @@ func (uss *UsageStatsService) sendUsageStats(oauthProviders map[string]bool) {
 	data := bytes.NewBuffer(out)
 
 	client := http.Client{Timeout: 5 * time.Second}
-	go func() {
-		if _, err := client.Post(usageStatsURL, "application/json", data); err != nil {
-			metricsLogger.Error("Failed to send usage stats", "err", err)
-		}
-	}()
+	go client.Post(usageStatsURL, "application/json", data)
 }
 
 func (uss *UsageStatsService) updateTotalStats() {
@@ -182,8 +178,8 @@ func (uss *UsageStatsService) updateTotalStats() {
 	metrics.StatsTotalActiveAdmins.Set(float64(statsQuery.Result.ActiveAdmins))
 }
 
-func getEdition(validLicense bool) string {
-	if validLicense {
+func getEdition() string {
+	if setting.IsEnterprise {
 		return "enterprise"
 	}
 	return "oss"

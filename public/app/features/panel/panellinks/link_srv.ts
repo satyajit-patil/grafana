@@ -27,12 +27,12 @@ const timeRangeVars = [
   },
 ];
 
-const seriesVars = [
+const fieldVars = [
   {
-    value: `${DataLinkBuiltInVars.seriesName}`,
+    value: `${DataLinkBuiltInVars.fieldName}`,
     label: 'Name',
-    documentation: 'Name of the series',
-    origin: VariableOrigin.Series,
+    documentation: 'Field name of the clicked datapoint (in ms epoch)',
+    origin: VariableOrigin.Field,
   },
 ];
 
@@ -76,51 +76,41 @@ export const getPanelLinksVariableSuggestions = (): VariableSuggestion[] => [
   ...timeRangeVars,
 ];
 
-const getFieldVars = (dataFrames: DataFrame[]) => {
-  const all = [];
-  for (const df of dataFrames) {
-    for (const f of df.fields) {
-      if (f.labels) {
-        for (const k of Object.keys(f.labels)) {
-          all.push(k);
-        }
-      }
-    }
-  }
-
-  const labels = _.chain(all)
+const getSeriesVars = (dataFrames: DataFrame[]) => {
+  const labels = _.chain(dataFrames.map(df => Object.keys(df.labels || {})))
     .flatten()
     .uniq()
     .value();
 
   return [
     {
-      value: `${DataLinkBuiltInVars.fieldName}`,
+      value: `${DataLinkBuiltInVars.seriesName}`,
       label: 'Name',
-      documentation: 'Field name of the clicked datapoint (in ms epoch)',
-      origin: VariableOrigin.Field,
+      documentation: 'Name of the series',
+      origin: VariableOrigin.Series,
     },
     ...labels.map(label => ({
-      value: `__field.labels${buildLabelPath(label)}`,
+      value: `__series.labels${buildLabelPath(label)}`,
       label: `labels.${label}`,
       documentation: `${label} label value`,
-      origin: VariableOrigin.Field,
+      origin: VariableOrigin.Series,
     })),
   ];
 };
 export const getDataLinksVariableSuggestions = (dataFrames: DataFrame[]): VariableSuggestion[] => {
-  const fieldVars = getFieldVars(dataFrames);
+  const seriesVars = getSeriesVars(dataFrames);
   const valueTimeVar = {
     value: `${DataLinkBuiltInVars.valueTime}`,
     label: 'Time',
     documentation: 'Time value of the clicked datapoint (in ms epoch)',
     origin: VariableOrigin.Value,
   };
+
   return [...seriesVars, ...fieldVars, ...valueVars, valueTimeVar, ...getPanelLinksVariableSuggestions()];
 };
 
 export const getCalculationValueDataLinksVariableSuggestions = (dataFrames: DataFrame[]): VariableSuggestion[] => {
-  const fieldVars = getFieldVars(dataFrames);
+  const seriesVars = getSeriesVars(dataFrames);
   const valueCalcVar = {
     value: `${DataLinkBuiltInVars.valueCalc}`,
     label: 'Calculation name',
@@ -162,38 +152,15 @@ export class LinkSrv implements LinkService {
     return info;
   }
 
-  /**
-   * Returns LinkModel which is basically a DataLink with all values interpolated through the templateSrv.
-   */
-  getDataLinkUIModel = <T>(link: DataLink, scopedVars: ScopedVars, origin: T): LinkModel<T> => {
+  getDataLinkUIModel = <T>(link: DataLink, scopedVars: ScopedVars, origin: T) => {
     const params: KeyValue = {};
     const timeRangeUrl = toUrlParams(this.timeSrv.timeRangeForUrl());
 
-    let href = link.url;
-    if (link.onBuildUrl) {
-      href = link.onBuildUrl({
-        origin,
-        scopedVars,
-      });
-    }
-
-    let onClick: (e: any) => void = undefined;
-    if (link.onClick) {
-      onClick = (e: any) => {
-        link.onClick({
-          origin,
-          scopedVars,
-          e,
-        });
-      };
-    }
-
     const info: LinkModel<T> = {
-      href: href.replace(/\s|\n/g, ''),
+      href: link.url.replace(/\s|\n/g, ''),
       title: this.templateSrv.replace(link.title || '', scopedVars),
       target: link.targetBlank ? '_blank' : '_self',
       origin,
-      onClick,
     };
     this.templateSrv.fillVariableValuesForUrl(params, scopedVars);
 

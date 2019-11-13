@@ -1,4 +1,6 @@
-import { CompletionItem } from '@grafana/ui';
+/* tslint:disable max-line-length */
+
+import { CompletionItem } from 'app/types/explore';
 
 export const RATE_RANGES: CompletionItem[] = [
   { label: '$__interval', sortText: '$__interval' },

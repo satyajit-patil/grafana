@@ -1,144 +1,139 @@
 import React, { PureComponent } from 'react';
-import memoizeOne from 'memoize-one';
-import { TimeZone, LogsDedupStrategy, LogRowModel, Field, LinkModel } from '@grafana/data';
+import { cx } from 'emotion';
+import { LogsModel, TimeZone, LogsDedupStrategy, LogRowModel } from '@grafana/data';
 
+import { LogRow } from './LogRow';
 import { Themeable } from '../../types/theme';
 import { withTheme } from '../../themes/index';
 import { getLogRowStyles } from './getLogRowStyles';
 
-//Components
-import { LogRow } from './LogRow';
-
-export const PREVIEW_LIMIT = 100;
-export const RENDER_LIMIT = 500;
+const PREVIEW_LIMIT = 100;
+const RENDER_LIMIT = 500;
 
 export interface Props extends Themeable {
-  logRows?: LogRowModel[];
-  deduplicatedRows?: LogRowModel[];
+  data: LogsModel;
   dedupStrategy: LogsDedupStrategy;
   highlighterExpressions: string[];
   showTime: boolean;
+  showLabels: boolean;
   timeZone: TimeZone;
+  deduplicatedData?: LogsModel;
   rowLimit?: number;
-  isLogsPanel?: boolean;
-  previewLimit?: number;
-  onClickFilterLabel?: (key: string, value: string) => void;
-  onClickFilterOutLabel?: (key: string, value: string) => void;
+  onClickLabel?: (label: string, value: string) => void;
   getRowContext?: (row: LogRowModel, options?: any) => Promise<any>;
-  getFieldLinks?: (field: Field, rowIndex: number) => Array<LinkModel<Field>>;
 }
 
 interface State {
+  deferLogs: boolean;
   renderAll: boolean;
 }
 
 class UnThemedLogRows extends PureComponent<Props, State> {
+  deferLogsTimer: number | null = null;
   renderAllTimer: number | null = null;
 
-  static defaultProps = {
-    previewLimit: PREVIEW_LIMIT,
-    rowLimit: RENDER_LIMIT,
-  };
-
   state: State = {
+    deferLogs: true,
     renderAll: false,
   };
 
   componentDidMount() {
     // Staged rendering
-    const { logRows, previewLimit } = this.props;
-    const rowCount = logRows ? logRows.length : 0;
-    // Render all right away if not too far over the limit
-    const renderAll = rowCount <= previewLimit! * 2;
-    if (renderAll) {
-      this.setState({ renderAll });
-    } else {
+    if (this.state.deferLogs) {
+      const { data } = this.props;
+      const rowCount = data && data.rows ? data.rows.length : 0;
+      // Render all right away if not too far over the limit
+      const renderAll = rowCount <= PREVIEW_LIMIT * 2;
+      this.deferLogsTimer = window.setTimeout(() => this.setState({ deferLogs: false, renderAll }), rowCount);
+    }
+  }
+
+  componentDidUpdate(prevProps: Props, prevState: State) {
+    // Staged rendering
+    if (prevState.deferLogs && !this.state.deferLogs && !this.state.renderAll) {
       this.renderAllTimer = window.setTimeout(() => this.setState({ renderAll: true }), 2000);
     }
   }
 
   componentWillUnmount() {
+    if (this.deferLogsTimer) {
+      clearTimeout(this.deferLogsTimer);
+    }
+
     if (this.renderAllTimer) {
       clearTimeout(this.renderAllTimer);
     }
   }
 
-  makeGetRows = memoizeOne((processedRows: LogRowModel[]) => {
-    return () => processedRows;
-  });
-
   render() {
     const {
       dedupStrategy,
       showTime,
-      logRows,
-      deduplicatedRows,
+      data,
+      deduplicatedData,
       highlighterExpressions,
+      showLabels,
       timeZone,
-      onClickFilterLabel,
-      onClickFilterOutLabel,
+      onClickLabel,
       rowLimit,
       theme,
-      isLogsPanel,
-      previewLimit,
-      getFieldLinks,
     } = this.props;
-    const { renderAll } = this.state;
-    const dedupedRows = deduplicatedRows ? deduplicatedRows : logRows;
-    const hasData = logRows && logRows.length > 0;
-    const dedupCount = dedupedRows
-      ? dedupedRows.reduce((sum, row) => (row.duplicates ? sum + row.duplicates : sum), 0)
+    const { deferLogs, renderAll } = this.state;
+    const dedupedData = deduplicatedData ? deduplicatedData : data;
+    const hasData = data && data.rows && data.rows.length > 0;
+    const hasLabel = hasData && dedupedData && dedupedData.hasUniqueLabels ? true : false;
+    const dedupCount = dedupedData
+      ? dedupedData.rows.reduce((sum, row) => (row.duplicates ? sum + row.duplicates : sum), 0)
       : 0;
     const showDuplicates = dedupStrategy !== LogsDedupStrategy.none && dedupCount > 0;
 
     // Staged rendering
-    const processedRows = dedupedRows ? dedupedRows : [];
-    const firstRows = processedRows.slice(0, previewLimit!);
-    const rowCount = Math.min(processedRows.length, rowLimit!);
-    const lastRows = processedRows.slice(previewLimit!, rowCount);
+    const processedRows = dedupedData ? dedupedData.rows : [];
+    const firstRows = processedRows.slice(0, PREVIEW_LIMIT);
+    const renderLimit = rowLimit || RENDER_LIMIT;
+    const rowCount = Math.min(processedRows.length, renderLimit);
+    const lastRows = processedRows.slice(PREVIEW_LIMIT, rowCount);
 
     // React profiler becomes unusable if we pass all rows to all rows and their labels, using getter instead
-    const getRows = this.makeGetRows(processedRows);
+    const getRows = () => processedRows;
     const getRowContext = this.props.getRowContext ? this.props.getRowContext : () => Promise.resolve([]);
     const { logsRows } = getLogRowStyles(theme);
 
     return (
-      <div className={logsRows}>
+      <div className={cx([logsRows])}>
         {hasData &&
+        !deferLogs && // Only inject highlighterExpression in the first set for performance reasons
           firstRows.map((row, index) => (
             <LogRow
-              key={row.uid}
+              key={index}
               getRows={getRows}
               getRowContext={getRowContext}
               highlighterExpressions={highlighterExpressions}
               row={row}
               showDuplicates={showDuplicates}
+              showLabels={showLabels && hasLabel}
               showTime={showTime}
               timeZone={timeZone}
-              isLogsPanel={isLogsPanel}
-              onClickFilterLabel={onClickFilterLabel}
-              onClickFilterOutLabel={onClickFilterOutLabel}
-              getFieldLinks={getFieldLinks}
+              onClickLabel={onClickLabel}
             />
           ))}
         {hasData &&
+          !deferLogs &&
           renderAll &&
           lastRows.map((row, index) => (
             <LogRow
-              key={row.uid}
+              key={PREVIEW_LIMIT + index}
               getRows={getRows}
               getRowContext={getRowContext}
               row={row}
               showDuplicates={showDuplicates}
+              showLabels={showLabels && hasLabel}
               showTime={showTime}
               timeZone={timeZone}
-              isLogsPanel={isLogsPanel}
-              onClickFilterLabel={onClickFilterLabel}
-              onClickFilterOutLabel={onClickFilterOutLabel}
-              getFieldLinks={getFieldLinks}
+              onClickLabel={onClickLabel}
             />
           ))}
-        {hasData && !renderAll && <span>Rendering {rowCount - previewLimit!} rows...</span>}
+        {hasData && deferLogs && <span>Rendering {rowCount} rows...</span>}
       </div>
     );
   }

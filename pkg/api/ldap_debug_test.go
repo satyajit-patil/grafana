@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/models"
-	"github.com/grafana/grafana/pkg/services/auth"
 	"github.com/grafana/grafana/pkg/services/ldap"
 	"github.com/grafana/grafana/pkg/services/multildap"
 	"github.com/grafana/grafana/pkg/setting"
@@ -18,6 +18,9 @@ import (
 
 type LDAPMock struct {
 	Results []*models.ExternalUserInfo
+}
+
+type TokenServiceMock struct {
 }
 
 var userSearchResult *models.ExternalUserInfo
@@ -41,6 +44,10 @@ func (m *LDAPMock) Users(logins []string) ([]*models.ExternalUserInfo, error) {
 
 func (m *LDAPMock) User(login string) (*models.ExternalUserInfo, ldap.ServerConfig, error) {
 	return userSearchResult, userSearchConfig, userSearchError
+}
+
+func (ts *TokenServiceMock) RevokeAllUserTokens(ctx context.Context, userId int64) error {
+	return nil
 }
 
 //***
@@ -384,7 +391,7 @@ func postSyncUserWithLDAPContext(t *testing.T, requestURL string) *scenarioConte
 	setting.LDAPEnabled = true
 	defer func() { setting.LDAPEnabled = ldap }()
 
-	hs := &HTTPServer{Cfg: setting.NewCfg(), AuthTokenService: auth.NewFakeUserAuthTokenService()}
+	hs := &HTTPServer{Cfg: setting.NewCfg()}
 
 	sc.defaultHandler = Wrap(func(c *models.ReqContext) Response {
 		sc.context = c
@@ -483,7 +490,7 @@ func TestPostSyncUserWithLDAPAPIEndpoint_WhenGrafanaAdmin(t *testing.T) {
 		return &LDAPMock{}
 	}
 
-	userSearchError = multildap.ErrDidNotFindUser
+	userSearchError = ldap.ErrCouldNotFindUser
 
 	admin := setting.AdminUser
 	setting.AdminUser = "ldap-daniel"
@@ -509,7 +516,7 @@ func TestPostSyncUserWithLDAPAPIEndpoint_WhenGrafanaAdmin(t *testing.T) {
 
 	expected := `
 	{
-		"error": "Did not find a user",
+		"error": "Can't find user in LDAP",
 		"message": "Refusing to sync grafana super admin \"ldap-daniel\" - it would be disabled"
 	}
 	`
@@ -521,6 +528,8 @@ func TestPostSyncUserWithLDAPAPIEndpoint_WhenUserNotInLDAP(t *testing.T) {
 	getLDAPConfig = func() (*ldap.Config, error) {
 		return &ldap.Config{}, nil
 	}
+
+	tokenService = &TokenServiceMock{}
 
 	newLDAP = func(_ []*ldap.ServerConfig) multildap.IMultiLDAP {
 		return &LDAPMock{}
@@ -554,11 +563,11 @@ func TestPostSyncUserWithLDAPAPIEndpoint_WhenUserNotInLDAP(t *testing.T) {
 
 	sc := postSyncUserWithLDAPContext(t, "/api/admin/ldap/sync/34")
 
-	assert.Equal(t, http.StatusBadRequest, sc.resp.Code)
+	assert.Equal(t, http.StatusOK, sc.resp.Code)
 
 	expected := `
 	{
-		"message": "User not found in LDAP. Disabled the user without updating information"
+		"message": "User disabled without any updates in the information"
 	}
 	`
 

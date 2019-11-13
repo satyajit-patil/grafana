@@ -40,7 +40,7 @@ func (hs *HTTPServer) LoginView(c *models.ReqContext) {
 	}
 
 	viewData.Settings["oauth"] = enabledOAuths
-	viewData.Settings["samlEnabled"] = hs.License.HasValidLicense() && hs.Cfg.SAMLEnabled
+	viewData.Settings["samlEnabled"] = setting.IsEnterprise && hs.Cfg.SAMLEnabled
 
 	if loginError, ok := tryGetEncryptedCookie(c, LoginErrorCookieName); ok {
 		//this cookie is only set whenever an OAuth login fails
@@ -57,31 +57,18 @@ func (hs *HTTPServer) LoginView(c *models.ReqContext) {
 		return
 	}
 
-	if c.IsSignedIn {
-		// Assign login token to auth proxy users if enable_login_token = true
-		if setting.AuthProxyEnabled && setting.AuthProxyEnableLoginToken {
-			hs.loginAuthProxyUser(c)
-		}
-
-		if redirectTo, _ := url.QueryUnescape(c.GetCookie("redirect_to")); len(redirectTo) > 0 {
-			c.SetCookie("redirect_to", "", -1, setting.AppSubUrl+"/")
-			c.Redirect(redirectTo)
-			return
-		}
-
-		c.Redirect(setting.AppSubUrl + "/")
+	if !c.IsSignedIn {
+		c.HTML(200, ViewIndex, viewData)
 		return
 	}
 
-	c.HTML(200, ViewIndex, viewData)
-}
+	if redirectTo, _ := url.QueryUnescape(c.GetCookie("redirect_to")); len(redirectTo) > 0 {
+		c.SetCookie("redirect_to", "", -1, setting.AppSubUrl+"/")
+		c.Redirect(redirectTo)
+		return
+	}
 
-func (hs *HTTPServer) loginAuthProxyUser(c *models.ReqContext) {
-	hs.loginUserWithUser(&models.User{
-		Id:    c.SignedInUser.UserId,
-		Email: c.SignedInUser.Email,
-		Login: c.SignedInUser.Login,
-	}, c)
+	c.Redirect(setting.AppSubUrl + "/")
 }
 
 func tryOAuthAutoLogin(c *models.ReqContext) bool {

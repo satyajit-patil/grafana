@@ -87,10 +87,6 @@ type Client struct {
 	// goroutines.
 	clientWaitGroup sync.WaitGroup
 
-	// stderrWaitGroup is used to prevent the command's Wait() function from
-	// being called before we've finished reading from the stderr pipe.
-	stderrWaitGroup sync.WaitGroup
-
 	// processKilled is used for testing only, to flag when the process was
 	// forcefully killed.
 	processKilled bool
@@ -594,12 +590,6 @@ func (c *Client) Start() (addr net.Addr, err error) {
 	// Create a context for when we kill
 	c.doneCtx, c.ctxCancel = context.WithCancel(context.Background())
 
-	// Start goroutine that logs the stderr
-	c.clientWaitGroup.Add(1)
-	c.stderrWaitGroup.Add(1)
-	// logStderr calls Done()
-	go c.logStderr(cmdStderr)
-
 	c.clientWaitGroup.Add(1)
 	go func() {
 		// ensure the context is cancelled when we're done
@@ -611,10 +601,6 @@ func (c *Client) Start() (addr net.Addr, err error) {
 		// in Kill.
 		pid := c.process.Pid
 		path := cmd.Path
-
-		// wait to finish reading from stderr since the stderr pipe reader
-		// will be closed by the subsequent call to cmd.Wait().
-		c.stderrWaitGroup.Wait()
 
 		// Wait for the command to end.
 		err := cmd.Wait()
@@ -637,6 +623,11 @@ func (c *Client) Start() (addr net.Addr, err error) {
 		defer c.l.Unlock()
 		c.exited = true
 	}()
+
+	// Start goroutine that logs the stderr
+	c.clientWaitGroup.Add(1)
+	// logStderr calls Done()
+	go c.logStderr(cmdStderr)
 
 	// Start a goroutine that is going to be reading the lines
 	// out of stdout
@@ -945,7 +936,6 @@ var stdErrBufferSize = 64 * 1024
 
 func (c *Client) logStderr(r io.Reader) {
 	defer c.clientWaitGroup.Done()
-	defer c.stderrWaitGroup.Done()
 	l := c.logger.Named(filepath.Base(c.config.Cmd.Path))
 
 	reader := bufio.NewReaderSize(r, stdErrBufferSize)
@@ -983,22 +973,7 @@ func (c *Client) logStderr(r io.Reader) {
 		entry, err := parseJSON(line)
 		// If output is not JSON format, print directly to Debug
 		if err != nil {
-			// Attempt to infer the desired log level from the commonly used
-			// string prefixes
-			switch line := string(line); {
-			case strings.HasPrefix(line, "[TRACE]"):
-				l.Trace(line)
-			case strings.HasPrefix(line, "[DEBUG]"):
-				l.Debug(line)
-			case strings.HasPrefix(line, "[INFO]"):
-				l.Info(line)
-			case strings.HasPrefix(line, "[WARN]"):
-				l.Warn(line)
-			case strings.HasPrefix(line, "[ERROR]"):
-				l.Error(line)
-			default:
-				l.Debug(line)
-			}
+			l.Debug(string(line))
 		} else {
 			out := flattenKVPairs(entry.KVPairs)
 
@@ -1014,11 +989,6 @@ func (c *Client) logStderr(r io.Reader) {
 				l.Warn(entry.Message, out...)
 			case hclog.Error:
 				l.Error(entry.Message, out...)
-			default:
-				// if there was no log level, it's likely this is unexpected
-				// json from something other than hclog, and we should output
-				// it verbatim.
-				l.Debug(string(line))
 			}
 		}
 	}

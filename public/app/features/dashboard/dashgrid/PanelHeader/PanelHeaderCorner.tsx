@@ -6,7 +6,6 @@ import { Tooltip, PopoverContent } from '@grafana/ui';
 import { PanelModel } from 'app/features/dashboard/state/PanelModel';
 import templateSrv from 'app/features/templating/template_srv';
 import { getTimeSrv, TimeSrv } from 'app/features/dashboard/services/TimeSrv';
-import { getLocationSrv } from '@grafana/runtime';
 
 enum InfoMode {
   Error = 'Error',
@@ -69,18 +68,11 @@ export class PanelHeaderCorner extends Component<Props> {
     );
   };
 
-  /**
-   * Open the Panel Inspector when we click on an error
-   */
-  onClickError = () => {
-    getLocationSrv().update({ partial: true, query: { inspect: this.props.panel.id } });
-  };
-
-  renderCornerType(infoMode: InfoMode, content: PopoverContent, onClick?: () => void) {
+  renderCornerType(infoMode: InfoMode, content: PopoverContent) {
     const theme = infoMode === InfoMode.Error ? 'error' : 'info';
     return (
       <Tooltip content={content} placement="top-start" theme={theme}>
-        <div className={`panel-info-corner panel-info-corner--${infoMode.toLowerCase()}`} onClick={onClick}>
+        <div className={`panel-info-corner panel-info-corner--${infoMode.toLowerCase()}`}>
           <i className="fa" />
           <span className="panel-info-corner-inner" />
         </div>
@@ -96,7 +88,7 @@ export class PanelHeaderCorner extends Component<Props> {
     }
 
     if (infoMode === InfoMode.Error) {
-      return this.renderCornerType(infoMode, this.props.error, this.onClickError);
+      return this.renderCornerType(infoMode, this.props.error);
     }
 
     if (infoMode === InfoMode.Info || infoMode === InfoMode.Links) {

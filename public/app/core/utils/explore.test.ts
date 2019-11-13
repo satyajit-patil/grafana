@@ -15,8 +15,9 @@ import {
 } from './explore';
 import { ExploreUrlState, ExploreMode } from 'app/types/explore';
 import store from 'app/core/store';
-import { DataQueryError, LogsDedupStrategy, LogsModel, LogLevel, dateTime, MutableDataFrame } from '@grafana/data';
-import { RefreshPicker } from '@grafana/ui';
+import { LogsDedupStrategy, LogsModel, LogLevel, dateTime } from '@grafana/data';
+import { DataQueryError } from '@grafana/ui';
+import { liveOption, offOption } from '@grafana/ui/src/components/RefreshPicker/RefreshPicker';
 
 const DEFAULT_EXPLORE_STATE: ExploreUrlState = {
   datasource: null,
@@ -340,7 +341,7 @@ describe('getRefIds', () => {
 describe('refreshIntervalToSortOrder', () => {
   describe('when called with live option', () => {
     it('then it should return ascending', () => {
-      const result = refreshIntervalToSortOrder(RefreshPicker.liveOption.value);
+      const result = refreshIntervalToSortOrder(liveOption.value);
 
       expect(result).toBe(SortOrder.Ascending);
     });
@@ -348,7 +349,7 @@ describe('refreshIntervalToSortOrder', () => {
 
   describe('when called with off option', () => {
     it('then it should return descending', () => {
-      const result = refreshIntervalToSortOrder(RefreshPicker.offOption.value);
+      const result = refreshIntervalToSortOrder(offOption.value);
 
       expect(result).toBe(SortOrder.Descending);
     });
@@ -373,9 +374,6 @@ describe('refreshIntervalToSortOrder', () => {
 
 describe('sortLogsResult', () => {
   const firstRow = {
-    rowIndex: 0,
-    entryFieldIndex: 0,
-    dataFrame: new MutableDataFrame(),
     timestamp: '2019-01-01T21:00:0.0000000Z',
     entry: '',
     hasAnsi: false,
@@ -386,13 +384,9 @@ describe('sortLogsResult', () => {
     timeFromNow: '',
     timeLocal: '',
     timeUtc: '',
-    uid: '1',
   };
   const sameAsFirstRow = firstRow;
   const secondRow = {
-    rowIndex: 1,
-    entryFieldIndex: 0,
-    dataFrame: new MutableDataFrame(),
     timestamp: '2019-01-01T22:00:0.0000000Z',
     entry: '',
     hasAnsi: false,
@@ -403,7 +397,6 @@ describe('sortLogsResult', () => {
     timeFromNow: '',
     timeLocal: '',
     timeUtc: '',
-    uid: '2',
   };
 
   describe('when called with SortOrder.Descending', () => {

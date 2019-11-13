@@ -2,9 +2,9 @@
 import React, { PureComponent, ChangeEvent } from 'react';
 
 // Components
-import { PanelOptionsGroup, PanelOptionsGrid, Switch, FormField, FormLabel } from '@grafana/ui';
+import { PanelEditorProps, PanelOptionsGroup, PanelOptionsGrid, Switch, FormField, FormLabel } from '@grafana/ui';
 
-import { PanelEditorProps, toIntegerOrUndefined, toNumberString } from '@grafana/data';
+import { toIntegerOrUndefined, toNumberString } from '@grafana/data';
 
 // Types
 import { AnnoOptions } from './types';

@@ -1,86 +1,54 @@
 package util
 
 import (
-	"fmt"
 	"net"
 	"strings"
-
-	"github.com/grafana/grafana/pkg/util/errutil"
 )
 
 // ParseIPAddress parses an IP address and removes port and/or IPV6 format
-func ParseIPAddress(input string) (string, error) {
-	addr, err := SplitHostPort(input)
-	if err != nil {
-		return "", errutil.Wrapf(err, "Failed to split network address '%s' by host and port",
-			input)
-	}
+func ParseIPAddress(input string) string {
+	host, _ := SplitHostPort(input)
 
-	ip := net.ParseIP(addr.Host)
+	ip := net.ParseIP(host)
+
 	if ip == nil {
-		return addr.Host, nil
+		return host
 	}
 
 	if ip.IsLoopback() {
-		if strings.Contains(addr.Host, ":") {
-			// IPv6
-			return "::1", nil
-		}
-		return "127.0.0.1", nil
+		return "127.0.0.1"
 	}
 
-	return ip.String(), nil
-}
-
-type NetworkAddress struct {
-	Host string
-	Port string
+	return ip.String()
 }
 
 // SplitHostPortDefault splits ip address/hostname string by host and port. Defaults used if no match found
-func SplitHostPortDefault(input, defaultHost, defaultPort string) (NetworkAddress, error) {
-	addr := NetworkAddress{
-		Host: defaultHost,
-		Port: defaultPort,
-	}
-	if len(input) == 0 {
-		return addr, fmt.Errorf("Input is empty")
-	}
+func SplitHostPortDefault(input, defaultHost, defaultPort string) (host string, port string) {
+	port = defaultPort
+	s := input
+	lastIndex := strings.LastIndex(input, ":")
 
-	start := 0
-	// Determine if IPv6 address, in which case IP address will be enclosed in square brackets
-	if strings.Index(input, "[") == 0 {
-		addrEnd := strings.LastIndex(input, "]")
-		if addrEnd < 0 {
-			// Malformed address
-			return addr, fmt.Errorf("Malformed IPv6 address: '%s'", input)
+	if lastIndex != -1 {
+		if lastIndex > 0 && input[lastIndex-1:lastIndex] != ":" {
+			s = input[:lastIndex]
+			port = input[lastIndex+1:]
+		} else if lastIndex == 0 {
+			s = defaultHost
+			port = input[lastIndex+1:]
 		}
-
-		start = addrEnd
-	}
-	if strings.LastIndex(input[start:], ":") < 0 {
-		// There's no port section of the input
-		// It's still useful to call net.SplitHostPort though, since it removes IPv6
-		// square brackets from the address
-		input = fmt.Sprintf("%s:%s", input, defaultPort)
+	} else {
+		port = defaultPort
 	}
 
-	host, port, err := net.SplitHostPort(input)
-	if err != nil {
-		return addr, errutil.Wrapf(err, "net.SplitHostPort failed for '%s'", input)
-	}
+	s = strings.Replace(s, "[", "", -1)
+	s = strings.Replace(s, "]", "", -1)
+	port = strings.Replace(port, "[", "", -1)
+	port = strings.Replace(port, "]", "", -1)
 
-	if len(host) > 0 {
-		addr.Host = host
-	}
-	if len(port) > 0 {
-		addr.Port = port
-	}
-
-	return addr, nil
+	return s, port
 }
 
 // SplitHostPort splits ip address/hostname string by host and port
-func SplitHostPort(input string) (NetworkAddress, error) {
+func SplitHostPort(input string) (host string, port string) {
 	return SplitHostPortDefault(input, "", "")
 }

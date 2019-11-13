@@ -1,12 +1,5 @@
-import {
-  DataFrame,
-  LoadingState,
-  dateTime,
-  PanelData,
-  DataSourceApi,
-  DataQueryRequest,
-  DataQueryResponse,
-} from '@grafana/data';
+import { DataFrame, LoadingState, dateTime } from '@grafana/data';
+import { PanelData, DataSourceApi, DataQueryRequest, DataQueryResponse } from '@grafana/ui';
 import { Subscriber, Observable, Subscription } from 'rxjs';
 import { runRequest } from './runRequest';
 import { deepFreeze } from '../../../../test/core/redux/reducerTester';
@@ -33,8 +26,8 @@ class ScenarioCtx {
     this.results = [];
     this.request = {
       range: {
-        from: this.fromStartTime,
-        to: this.toStartTime,
+        from: this.toStartTime,
+        to: this.fromStartTime,
         raw: { from: '1h', to: 'now' },
       },
       targets: [

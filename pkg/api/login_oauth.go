@@ -29,13 +29,10 @@ var (
 	OauthStateCookieName = "oauth_state"
 )
 
-func GenStateString() (string, error) {
+func GenStateString() string {
 	rnd := make([]byte, 32)
-	if _, err := rand.Read(rnd); err != nil {
-		oauthLogger.Error("failed to generate state string", "err", err)
-		return "", err
-	}
-	return base64.URLEncoding.EncodeToString(rnd), nil
+	rand.Read(rnd)
+	return base64.URLEncoding.EncodeToString(rnd)
 }
 
 func (hs *HTTPServer) OAuthLogin(ctx *m.ReqContext) {
@@ -61,13 +58,7 @@ func (hs *HTTPServer) OAuthLogin(ctx *m.ReqContext) {
 
 	code := ctx.Query("code")
 	if code == "" {
-		state, err := GenStateString()
-		if err != nil {
-			ctx.Logger.Error("Generating state string failed", "err", err)
-			ctx.Handle(500, "An internal error occurred", nil)
-			return
-		}
-
+		state := GenStateString()
 		hashedState := hashStatecode(state, setting.OAuthService.OAuthInfos[name].ClientSecret)
 		hs.writeCookie(ctx.Resp, OauthStateCookieName, hashedState, 60, hs.Cfg.CookieSameSite)
 		if setting.OAuthService.OAuthInfos[name].HostedDomain == "" {
@@ -184,10 +175,7 @@ func (hs *HTTPServer) OAuthLogin(ctx *m.ReqContext) {
 	}
 
 	if userInfo.Role != "" {
-		rt := m.RoleType(userInfo.Role)
-		if rt.IsValid() {
-			extUser.OrgRoles[1] = rt
-		}
+		extUser.OrgRoles[1] = m.RoleType(userInfo.Role)
 	}
 
 	// add/update user in grafana
@@ -251,9 +239,7 @@ func hashStatecode(code, seed string) string {
 
 func (hs *HTTPServer) redirectWithError(ctx *m.ReqContext, err error, v ...interface{}) {
 	ctx.Logger.Error(err.Error(), v...)
-	if err := hs.trySetEncryptedCookie(ctx, LoginErrorCookieName, err.Error(), 60); err != nil {
-		oauthLogger.Error("Failed to set encrypted cookie", "err", err)
-	}
+	hs.trySetEncryptedCookie(ctx, LoginErrorCookieName, err.Error(), 60)
 
 	ctx.Redirect(setting.AppSubUrl + "/login")
 }

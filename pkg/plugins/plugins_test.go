@@ -29,16 +29,15 @@ func TestPluginScans(t *testing.T) {
 
 	Convey("When reading app plugin definition", t, func() {
 		setting.Raw = ini.Empty()
-		sec, err := setting.Raw.NewSection("plugin.nginx-app")
-		So(err, ShouldBeNil)
-		_, err = sec.NewKey("path", "testdata/test-app")
-		So(err, ShouldBeNil)
+		sec, _ := setting.Raw.NewSection("plugin.nginx-app")
+		sec.NewKey("path", "testdata/test-app")
 
 		pm := &PluginManager{}
-		err = pm.Init()
-		So(err, ShouldBeNil)
+		err := pm.Init()
 
+		So(err, ShouldBeNil)
 		So(len(Apps), ShouldBeGreaterThan, 0)
+
 		So(Apps["test-app"].Info.Logos.Large, ShouldEqual, "public/plugins/test-app/img/logo_large.png")
 		So(Apps["test-app"].Info.Screenshots[1].Path, ShouldEqual, "public/plugins/test-app/img/screenshot2.png")
 	})

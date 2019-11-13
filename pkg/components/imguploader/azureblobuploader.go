@@ -51,12 +51,7 @@ func (az *AzureBlobUploader) Upload(ctx context.Context, imageDiskPath string) (
 	}
 	defer file.Close()
 
-	randomFileName, err := util.GetRandomString(30)
-	if err != nil {
-		return "", err
-	}
-
-	randomFileName += pngExt
+	randomFileName := util.GetRandomString(30) + ".png"
 	// upload image
 	az.log.Debug("Uploading image to azure_blob", "container_name", az.container_name, "blob_name", randomFileName)
 	resp, err := blob.FileUpload(az.container_name, randomFileName, file)
@@ -167,9 +162,7 @@ func (c *StorageClient) FileUpload(container, blobName string, body io.Reader) (
 	extension := strings.ToLower(path.Ext(blobName))
 	contentType := mime.TypeByExtension(extension)
 	buf := new(bytes.Buffer)
-	if _, err := buf.ReadFrom(body); err != nil {
-		return nil, err
-	}
+	buf.ReadFrom(body)
 	req, err := http.NewRequest(
 		"PUT",
 		c.absUrl("%s/%s", container, blobName),
@@ -188,9 +181,7 @@ func (c *StorageClient) FileUpload(container, blobName string, body io.Reader) (
 		"Content-Length": strconv.Itoa(buf.Len()),
 	})
 
-	if err := c.Auth.SignRequest(req); err != nil {
-		return nil, err
-	}
+	c.Auth.SignRequest(req)
 
 	return c.transport().RoundTrip(req)
 }
@@ -210,7 +201,7 @@ type Auth struct {
 	Key     string
 }
 
-func (a *Auth) SignRequest(req *http.Request) error {
+func (a *Auth) SignRequest(req *http.Request) {
 	strToSign := fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s",
 		strings.ToUpper(req.Method),
 		tryget(req.Header, "Content-Encoding"),
@@ -230,17 +221,13 @@ func (a *Auth) SignRequest(req *http.Request) error {
 	decodedKey, _ := base64.StdEncoding.DecodeString(a.Key)
 
 	sha256 := hmac.New(sha256.New, decodedKey)
-	if _, err := sha256.Write([]byte(strToSign)); err != nil {
-		return err
-	}
+	sha256.Write([]byte(strToSign))
 
 	signature := base64.StdEncoding.EncodeToString(sha256.Sum(nil))
 
 	copyHeadersToRequest(req, map[string]string{
 		"Authorization": fmt.Sprintf("SharedKey %s:%s", a.Account, signature),
 	})
-
-	return nil
 }
 
 func tryget(headers map[string][]string, key string) string {

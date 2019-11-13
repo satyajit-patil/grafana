@@ -5,7 +5,6 @@ import (
 	"github.com/grafana/grafana/pkg/cmd/grafana-cli/logger"
 	s "github.com/grafana/grafana/pkg/cmd/grafana-cli/services"
 	"github.com/grafana/grafana/pkg/cmd/grafana-cli/utils"
-	"github.com/grafana/grafana/pkg/util/errutil"
 )
 
 func upgradeCommand(c utils.CommandLine) error {
@@ -25,10 +24,7 @@ func upgradeCommand(c utils.CommandLine) error {
 	}
 
 	if shouldUpgrade(localPlugin.Info.Version, &plugin) {
-		if err := s.RemoveInstalledPlugin(pluginsDir, pluginName); err != nil {
-			return errutil.Wrapf(err, "Failed to remove plugin '%s'", pluginName)
-		}
-
+		s.RemoveInstalledPlugin(pluginsDir, pluginName)
 		return InstallPlugin(pluginName, "", c)
 	}
 

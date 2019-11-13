@@ -1,4 +1,4 @@
-import { LogsModel, GraphSeriesXY, DataFrame, FieldType, TimeZone } from '@grafana/data';
+import { LogsModel, GraphSeriesXY, DataFrame, FieldType } from '@grafana/data';
 
 import { ExploreItemState, ExploreMode } from 'app/types/explore';
 import TableModel, { mergeTablesIntoModel } from 'app/core/table_model';
@@ -7,12 +7,7 @@ import { dataFrameToLogsModel } from 'app/core/logs_model';
 import { getGraphSeriesModel } from 'app/plugins/panel/graph2/getGraphSeriesModel';
 
 export class ResultProcessor {
-  constructor(
-    private state: ExploreItemState,
-    private dataFrames: DataFrame[],
-    private intervalMs: number,
-    private timeZone: TimeZone
-  ) {}
+  constructor(private state: ExploreItemState, private dataFrames: DataFrame[], private intervalMs: number) {}
 
   getGraphResult(): GraphSeriesXY[] {
     if (this.state.mode !== ExploreMode.Metrics) {
@@ -27,7 +22,6 @@ export class ResultProcessor {
 
     return getGraphSeriesModel(
       onlyTimeSeries,
-      this.timeZone,
       {},
       { showBars: false, showLines: true, showPoints: false },
       { asTable: false, isVisible: true, placement: 'under' }
@@ -83,7 +77,7 @@ export class ResultProcessor {
       return null;
     }
 
-    const newResults = dataFrameToLogsModel(this.dataFrames, this.intervalMs, this.timeZone);
+    const newResults = dataFrameToLogsModel(this.dataFrames, this.intervalMs);
     const sortOrder = refreshIntervalToSortOrder(this.state.refreshInterval);
     const sortedNewResults = sortLogsResult(newResults, sortOrder);
 

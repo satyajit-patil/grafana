@@ -1,14 +1,6 @@
-import angular, { IScope } from 'angular';
-import debounce from 'lodash/debounce';
-import each from 'lodash/each';
-import filter from 'lodash/filter';
-import find from 'lodash/find';
-import indexOf from 'lodash/indexOf';
-import map from 'lodash/map';
-
+import angular from 'angular';
+import _ from 'lodash';
 import coreModule from '../core_module';
-import { GrafanaRootScope } from 'app/routes/GrafanaCtrl';
-import { containsSearchFilter } from '../../features/templating/variable';
 
 export class ValueSelectDropdownCtrl {
   dropdownVisible: any;
@@ -24,25 +16,20 @@ export class ValueSelectDropdownCtrl {
 
   hide: any;
   onUpdated: any;
-  queryHasSearchFilter: boolean;
-  debouncedQueryChanged: Function;
 
   /** @ngInject */
-  constructor(private $q: any, private $scope: IScope) {
-    this.queryHasSearchFilter = this.variable ? containsSearchFilter(this.variable.query) : false;
-    this.debouncedQueryChanged = debounce(this.queryChanged.bind(this), 200);
-  }
+  constructor(private $q: any) {}
 
   show() {
     this.oldVariableText = this.variable.current.text;
     this.highlightIndex = -1;
 
     this.options = this.variable.options;
-    this.selectedValues = filter(this.options, { selected: true });
+    this.selectedValues = _.filter(this.options, { selected: true });
 
-    this.tags = map(this.variable.tags, value => {
+    this.tags = _.map(this.variable.tags, value => {
       let tag = { text: value, selected: false };
-      each(this.variable.current.tags, tagObj => {
+      _.each(this.variable.current.tags, tagObj => {
         if (tagObj.text === value) {
           tag = tagObj;
         }
@@ -50,12 +37,8 @@ export class ValueSelectDropdownCtrl {
       return tag;
     });
 
-    // new behaviour, if this is a query that uses searchfilter it might be a nicer
-    // user experience to show the last typed search query in the input field
-    const query = this.queryHasSearchFilter && this.search && this.search.query ? this.search.query : '';
-
     this.search = {
-      query,
+      query: '',
       options: this.options.slice(0, Math.min(this.options.length, 1000)),
     };
 
@@ -67,13 +50,13 @@ export class ValueSelectDropdownCtrl {
 
     if (current.tags && current.tags.length) {
       // filer out values that are in selected tags
-      const selectedAndNotInTag = filter(this.variable.options, option => {
+      const selectedAndNotInTag = _.filter(this.variable.options, option => {
         if (!option.selected) {
           return false;
         }
         for (let i = 0; i < current.tags.length; i++) {
           const tag = current.tags[i];
-          if (indexOf(tag.values, option.value) !== -1) {
+          if (_.indexOf(tag.values, option.value) !== -1) {
             return false;
           }
         }
@@ -81,7 +64,7 @@ export class ValueSelectDropdownCtrl {
       });
 
       // convert values to text
-      const currentTexts = map(selectedAndNotInTag, 'text');
+      const currentTexts = _.map(selectedAndNotInTag, 'text');
 
       // join texts
       this.linkText = currentTexts.join(' + ');
@@ -94,14 +77,14 @@ export class ValueSelectDropdownCtrl {
   }
 
   clearSelections() {
-    this.selectedValues = filter(this.options, { selected: true });
+    this.selectedValues = _.filter(this.options, { selected: true });
 
     if (this.selectedValues.length) {
-      each(this.options, option => {
+      _.each(this.options, option => {
         option.selected = false;
       });
     } else {
-      each(this.search.options, option => {
+      _.each(this.search.options, option => {
         option.selected = true;
       });
     }
@@ -120,8 +103,8 @@ export class ValueSelectDropdownCtrl {
     return tagValuesPromise.then((values: any) => {
       tag.values = values;
       tag.valuesText = values.join(' + ');
-      each(this.options, option => {
-        if (indexOf(tag.values, option.value) !== -1) {
+      _.each(this.options, option => {
+        if (_.indexOf(tag.values, option.value) !== -1) {
           option.selected = tag.selected;
         }
       });
@@ -144,11 +127,11 @@ export class ValueSelectDropdownCtrl {
       if (this.search.options.length === 0) {
         this.commitChanges();
       } else {
-        this.selectValue(this.search.options[this.highlightIndex], {}, true);
+        this.selectValue(this.search.options[this.highlightIndex], {}, true, false);
       }
     }
     if (evt.keyCode === 32) {
-      this.selectValue(this.search.options[this.highlightIndex], {}, false);
+      this.selectValue(this.search.options[this.highlightIndex], {}, false, false);
     }
   }
 
@@ -156,7 +139,7 @@ export class ValueSelectDropdownCtrl {
     this.highlightIndex = (this.highlightIndex + direction) % this.search.options.length;
   }
 
-  selectValue(option: any, event: any, commitChange?: boolean) {
+  selectValue(option: any, event: any, commitChange?: boolean, excludeOthers?: boolean) {
     if (!option) {
       return;
     }
@@ -164,9 +147,10 @@ export class ValueSelectDropdownCtrl {
     option.selected = this.variable.multi ? !option.selected : true;
 
     commitChange = commitChange || false;
+    excludeOthers = excludeOthers || false;
 
     const setAllExceptCurrentTo = (newValue: any) => {
-      each(this.options, other => {
+      _.each(this.options, other => {
         if (option !== other) {
           other.selected = newValue;
         }
@@ -178,9 +162,7 @@ export class ValueSelectDropdownCtrl {
       option.selected = true;
     }
 
-    if (option.text === 'All') {
-      // always clear search query if all is marked
-      this.search.query = '';
+    if (option.text === 'All' || excludeOthers) {
       setAllExceptCurrentTo(false);
       commitChange = true;
     } else if (!this.variable.multi) {
@@ -195,7 +177,7 @@ export class ValueSelectDropdownCtrl {
   }
 
   selectionsChanged(commitChange: boolean) {
-    this.selectedValues = filter(this.options, { selected: true });
+    this.selectedValues = _.filter(this.options, { selected: true });
 
     if (this.selectedValues.length > 1) {
       if (this.selectedValues[0].text === 'All') {
@@ -205,19 +187,19 @@ export class ValueSelectDropdownCtrl {
     }
 
     // validate selected tags
-    each(this.tags, tag => {
+    _.each(this.tags, tag => {
       if (tag.selected) {
-        each(tag.values, value => {
-          if (!find(this.selectedValues, { value: value })) {
+        _.each(tag.values, value => {
+          if (!_.find(this.selectedValues, { value: value })) {
             tag.selected = false;
           }
         });
       }
     });
 
-    this.selectedTags = filter(this.tags, { selected: true });
-    this.variable.current.value = map(this.selectedValues, 'value');
-    this.variable.current.text = map(this.selectedValues, 'text').join(' + ');
+    this.selectedTags = _.filter(this.tags, { selected: true });
+    this.variable.current.value = _.map(this.selectedValues, 'value');
+    this.variable.current.text = _.map(this.selectedValues, 'text').join(' + ');
     this.variable.current.tags = this.selectedTags;
 
     if (!this.variable.multi) {
@@ -241,52 +223,29 @@ export class ValueSelectDropdownCtrl {
 
     this.dropdownVisible = false;
     this.updateLinkText();
-    if (this.queryHasSearchFilter) {
-      this.updateLazyLoadedOptions();
-    }
 
     if (this.variable.current.text !== this.oldVariableText) {
       this.onUpdated();
     }
   }
 
-  async queryChanged() {
-    if (this.queryHasSearchFilter) {
-      await this.updateLazyLoadedOptions();
-      return;
-    }
-
-    const options = filter(this.options, option => {
+  queryChanged() {
+    this.highlightIndex = -1;
+    this.search.options = _.filter(this.options, option => {
       return option.text.toLowerCase().indexOf(this.search.query.toLowerCase()) !== -1;
     });
 
-    this.updateUIBoundOptions(this.$scope, options);
+    this.search.options = this.search.options.slice(0, Math.min(this.search.options.length, 1000));
   }
 
   init() {
     this.selectedTags = this.variable.current.tags || [];
     this.updateLinkText();
   }
-
-  async updateLazyLoadedOptions() {
-    this.options = await this.lazyLoadOptions(this.search.query);
-    this.updateUIBoundOptions(this.$scope, this.options);
-  }
-
-  async lazyLoadOptions(query: string): Promise<any[]> {
-    await this.variable.updateOptions(query);
-    return this.variable.options;
-  }
-
-  updateUIBoundOptions($scope: IScope, options: any[]) {
-    this.highlightIndex = 0;
-    this.search.options = options.slice(0, Math.min(options.length, 1000));
-    $scope.$apply();
-  }
 }
 
 /** @ngInject */
-export function valueSelectDropdown($compile: any, $window: any, $timeout: any, $rootScope: GrafanaRootScope) {
+export function valueSelectDropdown($compile: any, $window: any, $timeout: any, $rootScope: any) {
   return {
     scope: { dashboard: '=', variable: '=', onUpdated: '&' },
     templateUrl: 'public/app/partials/valueSelectDropdown.html',

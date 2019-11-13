@@ -1,5 +1,6 @@
 import { storiesOf } from '@storybook/react';
 import { Button, LinkButton } from './Button';
+import { CommonButtonProps } from './AbstractButton';
 // @ts-ignore
 import withPropsCombinations from 'react-storybook-addon-props-combinations';
 import { action } from '@storybook/addon-actions';
@@ -14,14 +15,14 @@ const defaultProps = {
 };
 
 const variants = {
-  size: ['xs', 'sm', 'md', 'lg'],
+  size: ['xs', 'sm', 'md', 'lg', 'xl'],
   variant: ['primary', 'secondary', 'danger', 'inverse', 'transparent'],
 };
 const combinationOptions = {
   CombinationRenderer: ThemeableCombinationsRowRenderer,
 };
 
-const renderButtonStory = (buttonComponent: typeof Button | typeof LinkButton) => {
+const renderButtonStory = (buttonComponent: React.ComponentType<CommonButtonProps>) => {
   const isDisabled = boolean('Disable button', false);
   return withPropsCombinations(
     buttonComponent,

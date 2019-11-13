@@ -80,9 +80,8 @@ func (fcli *FakeCommandLine) FlagNames() []string {
 	return flagNames
 }
 
-func (fcli *FakeCommandLine) ShowHelp() error {
+func (fcli *FakeCommandLine) ShowHelp() {
 	fcli.HelpShown = true
-	return nil
 }
 
 func (fcli *FakeCommandLine) Application() *cli.App {

@@ -3,21 +3,28 @@ import React from 'react';
 // @ts-ignore
 import Cascader from 'rc-cascader';
 
-import { SlatePrism, TypeaheadOutput, SuggestionsState, QueryField, TypeaheadInput, BracesPlugin } from '@grafana/ui';
+import { SlatePrism } from '@grafana/ui';
 
+// Components
+import QueryField, { TypeaheadInput } from 'app/features/explore/QueryField';
 // Utils & Services
 // dom also includes Element polyfills
+import BracesPlugin from 'app/features/explore/slate-plugins/braces';
 import { Plugin, Node } from 'slate';
 
 // Types
 import { LokiQuery } from '../types';
-import { DOMUtil } from '@grafana/ui';
-import { ExploreQueryFieldProps, AbsoluteTimeRange } from '@grafana/data';
+import { TypeaheadOutput } from 'app/types/explore';
+import { DataSourceApi, ExploreQueryFieldProps, DataSourceStatus, DOMUtil } from '@grafana/ui';
+import { AbsoluteTimeRange } from '@grafana/data';
 import { Grammar } from 'prismjs';
 import LokiLanguageProvider, { LokiHistoryItem } from '../language_provider';
-import LokiDatasource from '../datasource';
+import { SuggestionsState } from 'app/features/explore/slate-plugins/suggestions';
 
-function getChooserText(hasSyntax: boolean, hasLogLabels: boolean) {
+function getChooserText(hasSyntax: boolean, hasLogLabels: boolean, datasourceStatus: DataSourceStatus) {
+  if (datasourceStatus === DataSourceStatus.Disconnected) {
+    return '(Disconnected)';
+  }
   if (!hasSyntax) {
     return 'Loading labels...';
   }
@@ -61,7 +68,7 @@ export interface CascaderOption {
   disabled?: boolean;
 }
 
-export interface LokiQueryFieldFormProps extends ExploreQueryFieldProps<LokiDatasource, LokiQuery> {
+export interface LokiQueryFieldFormProps extends ExploreQueryFieldProps<DataSourceApi<LokiQuery>, LokiQuery> {
   history: LokiHistoryItem[];
   syntax: Grammar;
   logLabelOptions: any[];
@@ -136,20 +143,29 @@ export class LokiQueryFieldForm extends React.PureComponent<LokiQueryFieldFormPr
   };
 
   render() {
-    const { data, query, syntaxLoaded, logLabelOptions, onLoadOptions, onLabelsRefresh, datasource } = this.props;
+    const {
+      queryResponse,
+      query,
+      syntaxLoaded,
+      logLabelOptions,
+      onLoadOptions,
+      onLabelsRefresh,
+      datasource,
+      datasourceStatus,
+    } = this.props;
     const lokiLanguageProvider = datasource.languageProvider as LokiLanguageProvider;
     const cleanText = datasource.languageProvider ? lokiLanguageProvider.cleanText : undefined;
     const hasLogLabels = logLabelOptions && logLabelOptions.length > 0;
-    const chooserText = getChooserText(syntaxLoaded, hasLogLabels);
-    const buttonDisabled = !(syntaxLoaded && hasLogLabels);
-    const showError = data && data.error && data.error.refId === query.refId;
+    const chooserText = getChooserText(syntaxLoaded, hasLogLabels, datasourceStatus);
+    const buttonDisabled = !syntaxLoaded || datasourceStatus === DataSourceStatus.Disconnected;
+    const showError = queryResponse && queryResponse.error && queryResponse.error.refId === query.refId;
 
     return (
       <>
         <div className="gf-form-inline">
           <div className="gf-form">
             <Cascader
-              options={logLabelOptions || []}
+              options={logLabelOptions}
               onChange={this.onChangeLogLabels}
               loadData={onLoadOptions}
               expandIcon={null}
@@ -172,7 +188,6 @@ export class LokiQueryFieldForm extends React.PureComponent<LokiQueryFieldFormPr
               onTypeahead={this.onTypeahead}
               onWillApplySuggestion={willApplySuggestion}
               onChange={this.onChangeQuery}
-              onBlur={this.props.onBlur}
               onRunQuery={this.props.onRunQuery}
               placeholder="Enter a Loki query"
               portalOrigin="loki"
@@ -180,7 +195,9 @@ export class LokiQueryFieldForm extends React.PureComponent<LokiQueryFieldFormPr
             />
           </div>
         </div>
-        <div>{showError ? <div className="prom-query-field-info text-error">{data.error.message}</div> : null}</div>
+        <div>
+          {showError ? <div className="prom-query-field-info text-error">{queryResponse.error.message}</div> : null}
+        </div>
       </>
     );
   }

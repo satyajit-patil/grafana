@@ -35,15 +35,13 @@ type connection struct {
 	hub  *hub
 	ws   *websocket.Conn
 	send chan []byte
-	log  log.Logger
 }
 
-func newConnection(ws *websocket.Conn, hub *hub, logger log.Logger) *connection {
+func newConnection(ws *websocket.Conn, hub *hub) *connection {
 	return &connection{
 		hub:  hub,
 		send: make(chan []byte, 256),
 		ws:   ws,
-		log:  logger,
 	}
 }
 
@@ -54,17 +52,13 @@ func (c *connection) readPump() {
 	}()
 
 	c.ws.SetReadLimit(maxMessageSize)
-	if err := c.ws.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
-		c.log.Warn("Setting read deadline failed", "err", err)
-	}
-	c.ws.SetPongHandler(func(string) error {
-		return c.ws.SetReadDeadline(time.Now().Add(pongWait))
-	})
+	c.ws.SetReadDeadline(time.Now().Add(pongWait))
+	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
 		_, message, err := c.ws.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
-				c.log.Info("error", "err", err)
+				log.Info("error: %v", err)
 			}
 			break
 		}
@@ -97,9 +91,7 @@ func (c *connection) handleMessage(message []byte) {
 }
 
 func (c *connection) write(mt int, payload []byte) error {
-	if err := c.ws.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
-		return err
-	}
+	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 	return c.ws.WriteMessage(mt, payload)
 }
 
@@ -114,9 +106,7 @@ func (c *connection) writePump() {
 		select {
 		case message, ok := <-c.send:
 			if !ok {
-				if err := c.write(websocket.CloseMessage, []byte{}); err != nil {
-					c.log.Warn("Failed to write close message to connection", "err", err)
-				}
+				c.write(websocket.CloseMessage, []byte{})
 				return
 			}
 			if err := c.write(websocket.TextMessage, message); err != nil {

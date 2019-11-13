@@ -12,14 +12,15 @@ import (
 )
 
 func TestPluginDashboards(t *testing.T) {
+
 	Convey("When asking plugin dashboard info", t, func() {
 		setting.Raw = ini.Empty()
 		sec, _ := setting.Raw.NewSection("plugin.test-app")
-		_, err := sec.NewKey("path", "testdata/test-app")
-		So(err, ShouldBeNil)
+		sec.NewKey("path", "testdata/test-app")
 
 		pm := &PluginManager{}
-		err = pm.Init()
+		err := pm.Init()
+
 		So(err, ShouldBeNil)
 
 		bus.AddHandler("test", func(query *m.GetDashboardQuery) error {

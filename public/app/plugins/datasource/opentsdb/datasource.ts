@@ -1,8 +1,9 @@
 import angular, { IQService } from 'angular';
 import _ from 'lodash';
-import { dateMath, DataQueryRequest } from '@grafana/data';
+import { dateMath } from '@grafana/data';
 import { BackendSrv } from 'app/core/services/backend_srv';
 import { TemplateSrv } from 'app/features/templating/template_srv';
+import { DataQueryRequest } from '@grafana/ui';
 
 export default class OpenTsDatasource {
   type: any;

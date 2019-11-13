@@ -23,16 +23,17 @@ export const GraphLegendEditor: React.FunctionComponent<GraphLegendEditorProps> 
     });
   };
 
-  const onOptionToggle = (option: keyof LegendOptions) => (event?: React.ChangeEvent<HTMLInputElement>) => {
-    const newOption: Partial<LegendOptions> = {};
+  const onOptionToggle = (option: keyof LegendOptions) => (event?: React.SyntheticEvent<HTMLInputElement>) => {
+    const newOption = {};
     if (!event) {
       return;
     }
-
+    // TODO: fix the ignores
+    // @ts-ignore
+    newOption[option] = event.target.checked;
     if (option === 'placement') {
+      // @ts-ignore
       newOption[option] = event.target.checked ? 'right' : 'under';
-    } else {
-      newOption[option] = event.target.checked;
     }
 
     onChange({

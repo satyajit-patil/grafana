@@ -1,8 +1,11 @@
 import _ from 'lodash';
 import React from 'react';
 
-import { QueryField, SlatePrism } from '@grafana/ui';
-import { ExploreQueryFieldProps } from '@grafana/data';
+import { SlatePrism } from '@grafana/ui';
+
+// dom also includes Element polyfills
+import QueryField from 'app/features/explore/QueryField';
+import { ExploreQueryFieldProps } from '@grafana/ui';
 import { ElasticDatasource } from '../datasource';
 import { ElasticsearchOptions, ElasticsearchQuery } from '../types';
 
@@ -59,7 +62,7 @@ class ElasticsearchQueryField extends React.PureComponent<Props, State> {
   };
 
   render() {
-    const { data, query } = this.props;
+    const { queryResponse, query } = this.props;
     const { syntaxLoaded } = this.state;
 
     return (
@@ -77,7 +80,9 @@ class ElasticsearchQueryField extends React.PureComponent<Props, State> {
             />
           </div>
         </div>
-        {data && data.error ? <div className="prom-query-field-info text-error">{data.error.message}</div> : null}
+        {queryResponse && queryResponse.error ? (
+          <div className="prom-query-field-info text-error">{queryResponse.error.message}</div>
+        ) : null}
       </>
     );
   }

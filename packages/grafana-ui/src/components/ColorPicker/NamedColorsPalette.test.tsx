@@ -2,8 +2,9 @@ import React from 'react';
 import { mount, ReactWrapper } from 'enzyme';
 import { NamedColorsPalette } from './NamedColorsPalette';
 import { ColorSwatch } from './NamedColorsGroup';
-import { getColorDefinitionByName, GrafanaThemeType } from '@grafana/data';
+import { getColorDefinitionByName } from '../../utils';
 import { getTheme } from '../../themes';
+import { GrafanaThemeType } from '../../types';
 
 describe('NamedColorsPalette', () => {
   const BasicGreen = getColorDefinitionByName('green');

@@ -3,9 +3,8 @@ package bus
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 type testQuery struct {
@@ -30,25 +29,26 @@ func TestDispatchCtxCanUseNormalHandlers(t *testing.T) {
 	}
 
 	err := bus.DispatchCtx(context.Background(), &testQuery{})
-	require.Equal(t, err, ErrHandlerNotFound,
-		"expected bus to return HandlerNotFound since no handler is registered")
+	if err != ErrHandlerNotFound {
+		t.Errorf("expected bus to return HandlerNotFound is no handler is registered")
+	}
 
 	bus.AddHandler(handler)
 
 	t.Run("when a normal handler is registered", func(t *testing.T) {
-		err := bus.Dispatch(&testQuery{})
-		require.Nil(t, err)
+		bus.Dispatch(&testQuery{})
 
-		require.Equal(t, handlerCallCount, 1,
-			"Expected normal handler to be called 1 time. was called %d", handlerCallCount)
+		if handlerCallCount != 1 {
+			t.Errorf("Expected normal handler to be called 1 time. was called %d", handlerCallCount)
+		}
 
 		t.Run("when a ctx handler is registered", func(t *testing.T) {
 			bus.AddHandlerCtx(handlerWithCtx)
-			err := bus.Dispatch(&testQuery{})
-			require.Nil(t, err)
+			bus.Dispatch(&testQuery{})
 
-			require.Equal(t, handlerWithCtxCallCount, 1,
-				"Expected ctx handler to be called 1 time. was called %d", handlerWithCtxCallCount)
+			if handlerWithCtxCallCount != 1 {
+				t.Errorf("Expected ctx handler to be called 1 time. was called %d", handlerWithCtxCallCount)
+			}
 		})
 	})
 
@@ -56,16 +56,23 @@ func TestDispatchCtxCanUseNormalHandlers(t *testing.T) {
 
 func TestQueryHandlerReturnsError(t *testing.T) {
 	bus := New()
+
 	bus.AddHandler(func(query *testQuery) error {
 		return errors.New("handler error")
 	})
 
 	err := bus.Dispatch(&testQuery{})
-	require.Error(t, err, "Send query failed")
+
+	if err == nil {
+		t.Fatal("Send query failed")
+	} else {
+		t.Log("Handler error received ok " + err.Error())
+	}
 }
 
 func TestQueryHandlerReturn(t *testing.T) {
 	bus := New()
+
 	bus.AddHandler(func(q *testQuery) error {
 		q.Resp = "hello from handler"
 		return nil
@@ -74,21 +81,32 @@ func TestQueryHandlerReturn(t *testing.T) {
 	query := &testQuery{}
 	err := bus.Dispatch(query)
 
-	require.Nil(t, err, "Send query failed")
+	if err != nil {
+		t.Fatal("Send query failed " + err.Error())
+	} else if query.Resp != "hello from handler" {
+		t.Fatal("Failed to get response from handler")
+	}
 }
 
 func TestEventListeners(t *testing.T) {
 	bus := New()
 	count := 0
+
 	bus.AddEventListener(func(query *testQuery) error {
 		count++
 		return nil
 	})
+
 	bus.AddEventListener(func(query *testQuery) error {
 		count += 10
 		return nil
 	})
 
 	err := bus.Publish(&testQuery{})
-	require.Nil(t, err, "Publish event failed")
+
+	if err != nil {
+		t.Fatal("Publish event failed " + err.Error())
+	} else if count != 11 {
+		t.Fatal(fmt.Sprintf("Publish event failed, listeners called: %v, expected: %v", count, 11))
+	}
 }

@@ -1,6 +1,8 @@
 import cloneDeep from 'lodash/cloneDeep';
 import omit from 'lodash/omit';
 
+import { VizOrientation, PanelModel } from '../../types/panel';
+import { FieldDisplayOptions } from '../../utils/fieldDisplay';
 import {
   fieldReducers,
   Threshold,
@@ -9,9 +11,6 @@ import {
   ReducerID,
   ValueMapping,
   MappingType,
-  VizOrientation,
-  PanelModel,
-  FieldDisplayOptions,
 } from '@grafana/data';
 
 export interface SingleStatBaseOptions {

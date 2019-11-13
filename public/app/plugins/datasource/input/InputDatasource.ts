@@ -5,10 +5,8 @@ import {
   DataSourceApi,
   DataSourceInstanceSettings,
   MetricFindValue,
-  DataFrame,
-  DataFrameDTO,
-  toDataFrame,
-} from '@grafana/data';
+} from '@grafana/ui';
+import { DataFrame, DataFrameDTO, toDataFrame } from '@grafana/data';
 
 import { InputQuery, InputOptions } from './types';
 
@@ -51,9 +49,6 @@ export class InputDatasource extends DataSourceApi<InputQuery, InputOptions> {
   query(options: DataQueryRequest<InputQuery>): Promise<DataQueryResponse> {
     const results: DataFrame[] = [];
     for (const query of options.targets) {
-      if (query.hide) {
-        continue;
-      }
       let data = this.data;
       if (query.data) {
         data = query.data.map(v => toDataFrame(v));

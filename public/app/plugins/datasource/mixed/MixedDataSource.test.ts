@@ -1,7 +1,8 @@
 import { DatasourceSrvMock, MockDataSourceApi } from 'test/mocks/datasource_srv';
 import { getDataSourceSrv } from '@grafana/runtime';
 import { getQueryOptions } from 'test/helpers/getQueryOptions';
-import { LoadingState, DataSourceInstanceSettings } from '@grafana/data';
+import { DataSourceInstanceSettings } from '@grafana/ui';
+import { LoadingState } from '@grafana/data';
 import { MixedDatasource } from './module';
 import { from } from 'rxjs';
 
@@ -47,6 +48,5 @@ describe('MixedDatasource', () => {
     expect(results[1].data).toEqual(['BBBB']);
     expect(results[2].data).toEqual(['CCCC']);
     expect(results[2].state).toEqual(LoadingState.Done);
-    expect(results.length).toBe(3);
   });
 });

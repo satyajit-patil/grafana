@@ -10,7 +10,6 @@ module.exports = function (grunt) {
     tempDir: 'tmp',
     platform: process.platform.replace('win32', 'windows'),
     enterprise: false,
-    libc: null,
   };
 
   if (grunt.option('platform')) {
@@ -31,10 +30,6 @@ module.exports = function (grunt) {
     }
   }
 
-  if (grunt.option('libc')) {
-    config.libc = grunt.option('libc');
-  }
-
   config.phjs = grunt.option('phjsToRelease');
   config.pkg.version = grunt.option('pkgVer') || config.pkg.version;
 
@@ -47,7 +42,7 @@ module.exports = function (grunt) {
   grunt.loadTasks('./scripts/grunt');
 
   // Utility function to load plugin settings into config
-  function loadConfig(config, path) {
+  function loadConfig(config,path) {
     require('glob').sync('*', {cwd: path}).forEach(function(option) {
       var key = option.replace(/\.js$/,'');
       // If key already exists, extend it. It is your responsibility to avoid naming collisions

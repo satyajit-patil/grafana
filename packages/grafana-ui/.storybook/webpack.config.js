@@ -1,35 +1,15 @@
 const path = require('path');
-module.exports = ({ config, mode }) => {
-  config.module.rules = [
-    ...(config.module.rules || []),
-    {
-      test: /\.tsx?$/,
-      use: [
-        {
-          loader: require.resolve('ts-loader'),
-          options: {
-            // transpileOnly: true,
-            configFile: path.resolve(__dirname, 'tsconfig.json'),
-          },
-        },
-        {
-          loader: require.resolve('react-docgen-typescript-loader'),
-          options: {
-            tsconfigPath: path.resolve(__dirname, 'tsconfig.json'),
-            // https://github.com/styleguidist/react-docgen-typescript#parseroptions
-            // @ts-ignore
-            propFilter: prop => {
-              if (prop.parent) {
-                return !prop.parent.fileName.includes('node_modules/@types/react/');
-              }
 
-              return true;
-            },
-          },
-        },
-      ],
-    },
-  ];
+module.exports = ({config, mode}) => {
+  config.module.rules.push({
+    test: /\.(ts|tsx)$/,
+    use: [
+      {
+        loader: require.resolve('ts-loader'),
+        options: {}
+      },
+    ],
+  });
 
   config.module.rules.push({
     test: /\.scss$/,
@@ -73,9 +53,7 @@ module.exports = ({ config, mode }) => {
     ],
   });
 
-  config.resolve.extensions.push('.ts', '.tsx', '.mdx');
-  config.stats = {
-    warningsFilter: /export .* was not found in/,
-  };
+  config.resolve.extensions.push('.ts', '.tsx');
+
   return config;
 };

@@ -36,7 +36,11 @@ func (r RoleType) Includes(other RoleType) bool {
 		return other != ROLE_ADMIN
 	}
 
-	return r == other
+	if r == ROLE_VIEWER {
+		return other == ROLE_VIEWER
+	}
+
+	return false
 }
 
 func (r *RoleType) UnmarshalJSON(data []byte) error {

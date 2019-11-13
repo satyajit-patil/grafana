@@ -1,16 +1,17 @@
-import React, { FunctionComponent } from 'react';
+import React, { FunctionComponent, useContext } from 'react';
 import { css, cx } from 'emotion';
 import { Labels, LogRowModel } from '@grafana/data';
 
 import { LogLabel } from './LogLabel';
-import { stylesFactory } from '../../themes';
+import { GrafanaTheme } from '../../types/theme';
+import { ThemeContext } from '../../themes/ThemeContext';
 
-const getStyles = stylesFactory(() => ({
+const getStyles = (theme: GrafanaTheme) => ({
   logsLabels: css`
     display: flex;
     flex-wrap: wrap;
   `,
-}));
+});
 
 interface Props {
   labels: Labels;
@@ -20,7 +21,8 @@ interface Props {
 }
 
 export const LogLabels: FunctionComponent<Props> = ({ getRows, labels, onClickLabel, plain }) => {
-  const styles = getStyles();
+  const theme = useContext(ThemeContext);
+  const styles = getStyles(theme);
 
   return (
     <span className={cx([styles.logsLabels])}>

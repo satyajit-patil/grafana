@@ -34,23 +34,17 @@ func SignUp(c *m.ReqContext, form dtos.SignUpForm) Response {
 	cmd.Email = form.Email
 	cmd.Status = m.TmpUserSignUpStarted
 	cmd.InvitedByUserId = c.UserId
-	var err error
-	cmd.Code, err = util.GetRandomString(20)
-	if err != nil {
-		return Error(500, "Failed to generate random string", err)
-	}
+	cmd.Code = util.GetRandomString(20)
 	cmd.RemoteAddr = c.Req.RemoteAddr
 
 	if err := bus.Dispatch(&cmd); err != nil {
 		return Error(500, "Failed to create signup", err)
 	}
 
-	if err := bus.Publish(&events.SignUpStarted{
+	bus.Publish(&events.SignUpStarted{
 		Email: form.Email,
 		Code:  cmd.Code,
-	}); err != nil {
-		return Error(500, "Failed to publish event", err)
-	}
+	})
 
 	metrics.MApiUserSignUpStarted.Inc()
 
@@ -91,12 +85,10 @@ func (hs *HTTPServer) SignUpStep2(c *m.ReqContext, form dtos.SignUpStep2Form) Re
 
 	// publish signup event
 	user := &createUserCmd.Result
-	if err := bus.Publish(&events.SignUpCompleted{
+	bus.Publish(&events.SignUpCompleted{
 		Email: user.Email,
 		Name:  user.NameOrFallback(),
-	}); err != nil {
-		return Error(500, "Failed to publish event", err)
-	}
+	})
 
 	// mark temp user as completed
 	if ok, rsp := updateTempUserStatus(form.Code, m.TmpUserCompleted); !ok {

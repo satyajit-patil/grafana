@@ -1,31 +1,19 @@
-import {
-  assignModelProperties,
-  TextBoxVariableModel,
-  VariableActions,
-  VariableHide,
-  VariableOption,
-  VariableType,
-  variableTypes,
-} from './variable';
+import { Variable, assignModelProperties, variableTypes } from './variable';
 import { VariableSrv } from './variable_srv';
 
-export class TextBoxVariable implements TextBoxVariableModel, VariableActions {
-  type: VariableType;
-  name: string;
-  label: string;
-  hide: VariableHide;
-  skipUrlSync: boolean;
+export class TextBoxVariable implements Variable {
   query: string;
-  current: VariableOption;
-  options: VariableOption[];
+  current: any;
+  options: any[];
+  skipUrlSync: boolean;
 
-  defaults: TextBoxVariableModel = {
+  defaults: any = {
     type: 'textbox',
     name: '',
+    hide: 0,
     label: '',
-    hide: VariableHide.dontHide,
     query: '',
-    current: {} as VariableOption,
+    current: {},
     options: [],
     skipUrlSync: false,
   };
@@ -45,7 +33,7 @@ export class TextBoxVariable implements TextBoxVariableModel, VariableActions {
   }
 
   updateOptions() {
-    this.options = [{ text: this.query.trim(), value: this.query.trim(), selected: false }];
+    this.options = [{ text: this.query.trim(), value: this.query.trim() }];
     this.current = this.options[0];
     return Promise.resolve();
   }

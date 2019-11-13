@@ -5,7 +5,7 @@ import fs from 'fs';
 import { PluginPackageDetails, ZipFileInfo, TestResultsInfo } from './types';
 import defaults from 'lodash/defaults';
 import clone from 'lodash/clone';
-import { PluginMetaInfo } from '@grafana/data';
+import { PluginMetaInfo } from '@grafana/ui';
 
 interface UploadArgs {
   local: string;

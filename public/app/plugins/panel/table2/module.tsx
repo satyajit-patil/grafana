@@ -1,4 +1,4 @@
-import { PanelPlugin } from '@grafana/data';
+import { PanelPlugin } from '@grafana/ui';
 
 import { TablePanelEditor } from './TablePanelEditor';
 import { TablePanel } from './TablePanel';

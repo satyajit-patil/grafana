@@ -1,12 +1,10 @@
 import { Task, TaskRunner } from './task';
 import GithubClient from '../utils/githubClient';
 
-interface CherryPickOptions {
-  enterprise: boolean;
-}
+interface CherryPickOptions {}
 
-const cherryPickRunner: TaskRunner<CherryPickOptions> = async ({ enterprise }) => {
-  const githubClient = new GithubClient({ enterprise });
+const cherryPickRunner: TaskRunner<CherryPickOptions> = async () => {
+  const githubClient = new GithubClient();
   const client = githubClient.client;
 
   const res = await client.get('/issues', {

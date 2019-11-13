@@ -28,7 +28,7 @@ queries through the use of query references.
 
 Name | Description
 ------------ | -------------
-*Name* | The data source name. This is how you refer to the data source in panels and queries.
+*Name* | The data source name. This is how you refer to the data source in panels & queries.
 *Default* | Default data source means that it will be pre-selected for new panels.
 *Url* | The HTTP protocol, IP, and port of your graphite-web or graphite-api install.
 *Access* | Server (default) = URL needs to be accessible from the Grafana backend/server, Browser = URL needs to be accessible from the browser.
@@ -114,25 +114,6 @@ variable with all possible values that exist in the wildcard position.
 You can also create nested variables that use other variables in their definition. For example
 `apps.$app.servers.*` uses the variable `$app` in its query definition.
 
-#### Using `__searchFilter` to filter results in Query Variable
-> Available from Grafana 6.5 and above
-
-Using `__searchFilter` in the query field will filter the query result based on what the user types in the dropdown select box.
-When nothing has been entered by the user the default value for `__searchFilter` is `*` and `` when used as part of a regular expression.
-
-The example below shows how to use `__searchFilter` as part of the query field to enable searching for `server` while the user types in the dropdown select box.
-
-Query
-```bash
-apps.$app.servers.$__searchFilter
-```
-
-TagValues
-```bash
-tag_values(server, server=~${__searchFilter:regex})
-```
-
-
 ### Variable Usage
 
 You can use a variable in a metric node path or as a parameter to a function.
@@ -169,11 +150,11 @@ queries via the Dashboard menu / Annotations view.
 Graphite supports two ways to query annotations. A regular metric query, for this you use the `Graphite query` textbox. A Graphite events query, use the `Graphite event tags` textbox,
 specify a tag or wildcard (leave empty should also work)
 
-## Configure the data source with provisioning
+## Configure the Datasource with Provisioning
 
-It's now possible to configure data sources using config files with Grafana's provisioning system. You can read more about how it works and all the settings you can set for data sources on the [provisioning docs page](/administration/provisioning/#datasources)
+It's now possible to configure datasources using config files with Grafana's provisioning system. You can read more about how it works and all the settings you can set for datasources on the [provisioning docs page](/administration/provisioning/#datasources)
 
-Here are some provisioning examples for this data source.
+Here are some provisioning examples for this datasource.
 
 ```yaml
 apiVersion: 1

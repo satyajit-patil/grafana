@@ -1,6 +1,5 @@
 import { PanelModel } from './PanelModel';
 import { getPanelPlugin } from '../../plugins/__mocks__/pluginMocks';
-import { PanelEvents } from '@grafana/data';
 
 class TablePanelCtrl {}
 
@@ -24,7 +23,6 @@ describe('PanelModel', () => {
           },
         ],
       },
-      arrayWith2Values: [{ value: 'name' }, { value: 'name2' }],
       showThresholds: true,
     };
 
@@ -44,7 +42,6 @@ describe('PanelModel', () => {
             },
           ],
         },
-        arrayWith2Values: [{ name: 'changed to only one value' }],
       };
 
       modelJson = {
@@ -72,10 +69,6 @@ describe('PanelModel', () => {
 
     it('should apply option defaults', () => {
       expect(model.getOptions().showThresholds).toBeTruthy();
-    });
-
-    it('should apply option defaults but not override if array is changed', () => {
-      expect(model.getOptions().arrayWith2Values.length).toBe(1);
     });
 
     it('should set model props on instance', () => {
@@ -151,7 +144,7 @@ describe('PanelModel', () => {
       let tearDownPublished = false;
 
       beforeEach(() => {
-        model.events.on(PanelEvents.panelTeardown, () => {
+        model.events.on('panel-teardown', () => {
           tearDownPublished = true;
         });
         model.changePlugin(getPanelPlugin({ id: 'graph' }));

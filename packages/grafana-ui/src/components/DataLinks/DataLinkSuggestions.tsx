@@ -1,5 +1,4 @@
-import { selectThemeVariant, ThemeContext } from '../../index';
-import { GrafanaTheme } from '@grafana/data';
+import { GrafanaTheme, selectThemeVariant, ThemeContext } from '../../index';
 import { css, cx } from 'emotion';
 import _ from 'lodash';
 import React, { useRef, useContext, useMemo } from 'react';

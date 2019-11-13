@@ -392,8 +392,7 @@ func TestPostgres(t *testing.T) {
 
 			if exist, err := sess.IsTableExist(metric_values{}); err != nil || exist {
 				So(err, ShouldBeNil)
-				err = sess.DropTable(metric_values{})
-				So(err, ShouldBeNil)
+				sess.DropTable(metric_values{})
 			}
 			err := sess.CreateTable(metric_values{})
 			So(err, ShouldBeNil)
@@ -722,8 +721,7 @@ func TestPostgres(t *testing.T) {
 
 			if exist, err := sess.IsTableExist(event{}); err != nil || exist {
 				So(err, ShouldBeNil)
-				err = sess.DropTable(event{})
-				So(err, ShouldBeNil)
+				sess.DropTable(event{})
 			}
 			err := sess.CreateTable(event{})
 			So(err, ShouldBeNil)

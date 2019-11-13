@@ -21,11 +21,11 @@ import (
 )
 
 type PrometheusExecutor struct {
-	Transport http.RoundTripper
+	Transport *http.Transport
 }
 
 type basicAuthTransport struct {
-	Transport http.RoundTripper
+	*http.Transport
 
 	username string
 	password string

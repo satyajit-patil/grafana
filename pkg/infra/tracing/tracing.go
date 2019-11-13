@@ -38,7 +38,7 @@ func (ts *TracingService) Init() error {
 	ts.parseSettings()
 
 	if ts.enabled {
-		return ts.initGlobalTracer()
+		ts.initGlobalTracer()
 	}
 
 	return nil

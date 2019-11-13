@@ -4,11 +4,10 @@ import tinycolor from 'tinycolor2';
 import { Threshold, TimeSeriesValue, getActiveThreshold, DisplayValue } from '@grafana/data';
 
 // Utils
-import { getColorFromHexRgbOrName } from '@grafana/data';
+import { getColorFromHexRgbOrName } from '../../utils';
 
 // Types
-import { VizOrientation } from '@grafana/data';
-import { Themeable } from '../../types';
+import { Themeable, VizOrientation } from '../../types';
 
 const MIN_VALUE_HEIGHT = 18;
 const MAX_VALUE_HEIGHT = 50;

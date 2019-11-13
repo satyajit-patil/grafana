@@ -23,8 +23,7 @@ func TestQueryCondition(t *testing.T) {
 			ctx.evaluator = `{"type": "gt", "params": [100]}`
 
 			Convey("Can read query condition from json model", func() {
-				_, err := ctx.exec()
-				So(err, ShouldBeNil)
+				ctx.exec()
 
 				So(ctx.condition.Query.From, ShouldEqual, "5m")
 				So(ctx.condition.Query.To, ShouldEqual, "now")

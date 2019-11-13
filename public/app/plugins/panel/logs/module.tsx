@@ -1,4 +1,4 @@
-import { PanelPlugin } from '@grafana/data';
+import { PanelPlugin } from '@grafana/ui';
 import { Options, defaults } from './types';
 import { LogsPanel } from './LogsPanel';
 import { LogsPanelEditor } from './LogsPanelEditor';

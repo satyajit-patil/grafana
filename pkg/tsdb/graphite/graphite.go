@@ -82,12 +82,10 @@ func (e *GraphiteExecutor) Query(ctx context.Context, dsInfo *models.DataSource,
 
 	defer span.Finish()
 
-	if err := opentracing.GlobalTracer().Inject(
+	opentracing.GlobalTracer().Inject(
 		span.Context(),
 		opentracing.HTTPHeaders,
-		opentracing.HTTPHeadersCarrier(req.Header)); err != nil {
-		return nil, err
-	}
+		opentracing.HTTPHeadersCarrier(req.Header))
 
 	res, err := ctxhttp.Do(ctx, httpClient, req)
 	if err != nil {

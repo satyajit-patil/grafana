@@ -128,12 +128,7 @@ func initContextWithApiKey(ctx *models.ReqContext) bool {
 	apikey := keyQuery.Result
 
 	// validate api key
-	isValid, err := apikeygen.IsValid(decoded, apikey.Key)
-	if err != nil {
-		ctx.JsonApiErr(500, "Validating API key failed", err)
-		return true
-	}
-	if !isValid {
+	if !apikeygen.IsValid(decoded, apikey.Key) {
 		ctx.JsonApiErr(401, errStringInvalidAPIKey, err)
 		return true
 	}

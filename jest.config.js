@@ -21,8 +21,7 @@ module.exports = {
   ],
   "setupFiles": [
     "./public/test/jest-shim.ts",
-    "./public/test/jest-setup.ts",
-    "jest-canvas-mock"
+    "./public/test/jest-setup.ts"
   ],
   "snapshotSerializers": ["enzyme-to-json/serializer"],
   "globals": { "ts-jest": { "isolatedModules": true } },

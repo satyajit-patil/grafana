@@ -12,7 +12,7 @@ parent = "http_api"
 
 # Data source API
 
-## Get all data sources
+## Get all datasources
 
 `GET /api/datasources`
 
@@ -290,4 +290,4 @@ Content-Type: application/json
 
 `GET /api/datasources/proxy/:datasourceId/*`
 
-Proxies all calls to the actual data source.
+Proxies all calls to the actual datasource.

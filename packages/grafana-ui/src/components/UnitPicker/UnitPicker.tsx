@@ -1,8 +1,8 @@
 import React, { PureComponent } from 'react';
 
-import { Select } from '../Select/Select';
+import { Select } from '..';
 
-import { getValueFormats } from '@grafana/data';
+import { getValueFormats } from '../../utils';
 
 interface Props {
   onChange: (item: any) => void;

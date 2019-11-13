@@ -1,46 +1,34 @@
 import _ from 'lodash';
 import kbn from 'app/core/utils/kbn';
-import {
-  assignModelProperties,
-  IntervalVariableModel,
-  VariableActions,
-  VariableHide,
-  VariableOption,
-  VariableRefresh,
-  VariableType,
-  variableTypes,
-} from './variable';
+import { Variable, assignModelProperties, variableTypes } from './variable';
 import { TimeSrv } from '../dashboard/services/TimeSrv';
 import { TemplateSrv } from './template_srv';
 import { VariableSrv } from './variable_srv';
 
-export class IntervalVariable implements IntervalVariableModel, VariableActions {
-  type: VariableType;
+export class IntervalVariable implements Variable {
   name: string;
-  label: string;
-  hide: VariableHide;
-  skipUrlSync: boolean;
   auto_count: number; // tslint:disable-line variable-name
-  auto_min: string; // tslint:disable-line variable-name
-  options: VariableOption[];
+  auto_min: number; // tslint:disable-line variable-name
+  options: any;
   auto: boolean;
   query: string;
-  refresh: VariableRefresh;
-  current: VariableOption;
+  refresh: number;
+  current: any;
+  skipUrlSync: boolean;
 
-  defaults: IntervalVariableModel = {
+  defaults: any = {
     type: 'interval',
     name: '',
+    hide: 0,
     label: '',
-    hide: VariableHide.dontHide,
-    skipUrlSync: false,
-    auto_count: 30,
-    auto_min: '10s',
+    refresh: 2,
     options: [],
-    auto: false,
+    current: {},
     query: '1m,10m,30m,1h,6h,12h,1d,7d,14d,30d',
-    refresh: VariableRefresh.onTimeRangeChanged,
-    current: {} as VariableOption,
+    auto: false,
+    auto_min: '10s',
+    auto_count: 30,
+    skipUrlSync: false,
   };
 
   /** @ngInject */
@@ -51,7 +39,7 @@ export class IntervalVariable implements IntervalVariableModel, VariableActions 
     private variableSrv: VariableSrv
   ) {
     assignModelProperties(this, model, this.defaults);
-    this.refresh = VariableRefresh.onTimeRangeChanged;
+    this.refresh = 2;
   }
 
   getSaveModel() {
@@ -74,7 +62,6 @@ export class IntervalVariable implements IntervalVariableModel, VariableActions 
       this.options.unshift({
         text: 'auto',
         value: '$__auto_interval_' + this.name,
-        selected: false,
       });
     }
 
@@ -88,7 +75,7 @@ export class IntervalVariable implements IntervalVariableModel, VariableActions 
     // extract options between quotes and/or comma
     this.options = _.map(this.query.match(/(["'])(.*?)\1|\w+/g), text => {
       text = text.replace(/["']+/g, '');
-      return { text: text.trim(), value: text.trim(), selected: false };
+      return { text: text.trim(), value: text.trim() };
     });
 
     this.updateAutoValue();

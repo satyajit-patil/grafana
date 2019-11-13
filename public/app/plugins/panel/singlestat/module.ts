@@ -1,10 +1,19 @@
 import _ from 'lodash';
-import { auto } from 'angular';
 import $ from 'jquery';
 import 'vendor/flot/jquery.flot';
 import 'vendor/flot/jquery.flot.gauge';
 import 'app/features/panel/panellinks/link_srv';
+import {
+  convertOldAngularValueMapping,
+  getColorFromHexRgbOrName,
+  getDisplayProcessor,
+  getFlotPairs,
+  LegacyResponseData,
+} from '@grafana/ui';
 
+import kbn from 'app/core/utils/kbn';
+import config from 'app/core/config';
+import { MetricsPanelCtrl } from 'app/plugins/sdk';
 import {
   DataFrame,
   DisplayValue,
@@ -16,19 +25,8 @@ import {
   LinkModel,
   reduceField,
   ReducerID,
-  LegacyResponseData,
-  getFlotPairs,
-  getDisplayProcessor,
-  getColorFromHexRgbOrName,
-  PanelEvents,
 } from '@grafana/data';
-
-import { convertOldAngularValueMapping } from '@grafana/ui';
-
-import { CoreEvents } from 'app/types';
-import kbn from 'app/core/utils/kbn';
-import config from 'app/core/config';
-import { MetricsPanelCtrl } from 'app/plugins/sdk';
+import { auto } from 'angular';
 import { LinkSrv } from 'app/features/panel/panellinks/link_srv';
 import { getProcessedDataFrames } from 'app/features/dashboard/state/runRequest';
 
@@ -120,9 +118,10 @@ class SingleStatCtrl extends MetricsPanelCtrl {
     super($scope, $injector);
     _.defaults(this.panel, this.panelDefaults);
 
-    this.events.on(CoreEvents.dataFramesReceived, this.onFramesReceived.bind(this));
-    this.events.on(PanelEvents.dataSnapshotLoad, this.onSnapshotLoad.bind(this));
-    this.events.on(PanelEvents.editModeInitialized, this.onInitEditMode.bind(this));
+    this.events.on('data-frames-received', this.onFramesReceived.bind(this));
+    this.events.on('data-error', this.onDataError.bind(this));
+    this.events.on('data-snapshot-load', this.onSnapshotLoad.bind(this));
+    this.events.on('init-edit-mode', this.onInitEditMode.bind(this));
 
     this.useDataFrames = true;
 
@@ -149,6 +148,10 @@ class SingleStatCtrl extends MetricsPanelCtrl {
   setUnitFormat(subItem: { value: any }) {
     this.panel.format = subItem.value;
     this.refresh();
+  }
+
+  onDataError(err: any) {
+    this.handleDataFrames([]);
   }
 
   onSnapshotLoad(dataList: LegacyResponseData[]) {
@@ -659,7 +662,7 @@ class SingleStatCtrl extends MetricsPanelCtrl {
 
     hookupDrilldownLinkTooltip();
 
-    this.events.on(PanelEvents.render, () => {
+    this.events.on('render', () => {
       render();
       ctrl.renderingCompleted();
     });

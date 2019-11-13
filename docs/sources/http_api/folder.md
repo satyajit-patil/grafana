@@ -49,7 +49,7 @@ Content-Type: application/json
   {
     "id":1,
     "uid": "nErXDvCkzz",
-    "title": "Department ABC",
+    "title": "Departmenet ABC",
     "url": "/dashboards/f/nErXDvCkzz/department-abc",
     "hasAcl": false,
     "canSave": true,
@@ -88,7 +88,7 @@ Content-Type: application/json
 {
   "id":1,
   "uid": "nErXDvCkzz",
-  "title": "Department ABC",
+  "title": "Departmenet ABC",
   "url": "/dashboards/f/nErXDvCkzz/department-abc",
   "hasAcl": false,
   "canSave": true,
@@ -143,7 +143,7 @@ Content-Type: application/json
 {
   "id":1,
   "uid": "nErXDvCkzz",
-  "title": "Department ABC",
+  "title": "Departmenet ABC",
   "url": "/dashboards/f/nErXDvCkzz/department-abc",
   "hasAcl": false,
   "canSave": true,
@@ -200,7 +200,7 @@ Content-Type: application/json
 {
   "id":1,
   "uid": "nErXDvCkzz",
-  "title": "Department DEF",
+  "title": "Departmenet DEF",
   "url": "/dashboards/f/nErXDvCkzz/department-def",
   "hasAcl": false,
   "canSave": true,
@@ -299,7 +299,7 @@ Content-Type: application/json
 {
   "id":1,
   "uid": "nErXDvCkzz",
-  "title": "Department ABC",
+  "title": "Departmenet ABC",
   "url": "/dashboards/f/nErXDvCkzz/department-abc",
   "hasAcl": false,
   "canSave": true,

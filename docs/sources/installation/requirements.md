@@ -20,7 +20,7 @@ This page includes useful information on the supported Operating Systems as well
 
 - [Debian / Ubuntu](/installation/debian)
 - [RPM-based Linux (CentOS, Fedora, OpenSuse, RedHat)](/installation/rpm)
-- [macOS](/installation/mac)
+- [Mac OS X](/installation/mac)
 - [Windows](/installation/windows)
 
 ### Unsupported

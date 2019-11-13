@@ -89,20 +89,19 @@ func NewTelegramNotifier(model *models.AlertNotification) (alerting.Notifier, er
 	}, nil
 }
 
-func (tn *TelegramNotifier) buildMessage(evalContext *alerting.EvalContext, sendImageInline bool) (*models.SendWebhookSync, error) {
+func (tn *TelegramNotifier) buildMessage(evalContext *alerting.EvalContext, sendImageInline bool) *models.SendWebhookSync {
 	if sendImageInline {
 		cmd, err := tn.buildMessageInlineImage(evalContext)
 		if err == nil {
-			return cmd, nil
+			return cmd
 		}
-
 		tn.log.Error("Could not generate Telegram message with inline image.", "err", err)
 	}
 
 	return tn.buildMessageLinkedImage(evalContext)
 }
 
-func (tn *TelegramNotifier) buildMessageLinkedImage(evalContext *alerting.EvalContext) (*models.SendWebhookSync, error) {
+func (tn *TelegramNotifier) buildMessageLinkedImage(evalContext *alerting.EvalContext) *models.SendWebhookSync {
 	message := fmt.Sprintf("<b>%s</b>\nState: %s\nMessage: %s\n", evalContext.GetNotificationTitle(), evalContext.Rule.Name, evalContext.Rule.Message)
 
 	ruleURL, err := evalContext.GetRuleURL()
@@ -119,17 +118,11 @@ func (tn *TelegramNotifier) buildMessageLinkedImage(evalContext *alerting.EvalCo
 		message = message + fmt.Sprintf("\n<i>Metrics:</i>%s", metrics)
 	}
 
-	return tn.generateTelegramCmd(message, "text", "sendMessage", func(w *multipart.Writer) {
-		fw, err := w.CreateFormField("parse_mode")
-		if err != nil {
-			tn.log.Error("Failed to create form file", "err", err)
-			return
-		}
-
-		if _, err := fw.Write([]byte("html")); err != nil {
-			tn.log.Error("Failed to write to form field", "err", err)
-		}
+	cmd := tn.generateTelegramCmd(message, "text", "sendMessage", func(w *multipart.Writer) {
+		fw, _ := w.CreateFormField("parse_mode")
+		fw.Write([]byte("html"))
 	})
+	return cmd
 }
 
 func (tn *TelegramNotifier) buildMessageInlineImage(evalContext *alerting.EvalContext) (*models.SendWebhookSync, error) {
@@ -156,38 +149,22 @@ func (tn *TelegramNotifier) buildMessageInlineImage(evalContext *alerting.EvalCo
 	metrics := generateMetricsMessage(evalContext)
 	message := generateImageCaption(evalContext, ruleURL, metrics)
 
-	return tn.generateTelegramCmd(message, "caption", "sendPhoto", func(w *multipart.Writer) {
-		fw, err := w.CreateFormFile("photo", evalContext.ImageOnDiskPath)
-		if err != nil {
-			tn.log.Error("Failed to create form file", "err", err)
-			return
-		}
-
-		if _, err := io.Copy(fw, imageFile); err != nil {
-			tn.log.Error("Failed to write to form file", "err", err)
-		}
+	cmd := tn.generateTelegramCmd(message, "caption", "sendPhoto", func(w *multipart.Writer) {
+		fw, _ := w.CreateFormFile("photo", evalContext.ImageOnDiskPath)
+		io.Copy(fw, imageFile)
 	})
+	return cmd, nil
 }
 
-func (tn *TelegramNotifier) generateTelegramCmd(message string, messageField string, apiAction string, extraConf func(writer *multipart.Writer)) (*models.SendWebhookSync, error) {
+func (tn *TelegramNotifier) generateTelegramCmd(message string, messageField string, apiAction string, extraConf func(writer *multipart.Writer)) *models.SendWebhookSync {
 	var body bytes.Buffer
 	w := multipart.NewWriter(&body)
 
-	fw, err := w.CreateFormField("chat_id")
-	if err != nil {
-		return nil, err
-	}
-	if _, err := fw.Write([]byte(tn.ChatID)); err != nil {
-		return nil, err
-	}
+	fw, _ := w.CreateFormField("chat_id")
+	fw.Write([]byte(tn.ChatID))
 
-	fw, err = w.CreateFormField(messageField)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := fw.Write([]byte(message)); err != nil {
-		return nil, err
-	}
+	fw, _ = w.CreateFormField(messageField)
+	fw.Write([]byte(message))
 
 	extraConf(w)
 
@@ -204,7 +181,7 @@ func (tn *TelegramNotifier) generateTelegramCmd(message string, messageField str
 			"Content-Type": w.FormDataContentType(),
 		},
 	}
-	return cmd, nil
+	return cmd
 }
 
 func generateMetricsMessage(evalContext *alerting.EvalContext) string {
@@ -255,14 +232,10 @@ func appendIfPossible(message string, extra string, sizeLimit int) string {
 // Notify send an alert notification to Telegram.
 func (tn *TelegramNotifier) Notify(evalContext *alerting.EvalContext) error {
 	var cmd *models.SendWebhookSync
-	var err error
 	if evalContext.ImagePublicURL == "" && tn.UploadImage {
-		cmd, err = tn.buildMessage(evalContext, true)
+		cmd = tn.buildMessage(evalContext, true)
 	} else {
-		cmd, err = tn.buildMessage(evalContext, false)
-	}
-	if err != nil {
-		return err
+		cmd = tn.buildMessage(evalContext, false)
 	}
 
 	if err := bus.DispatchCtx(evalContext.Ctx, cmd); err != nil {

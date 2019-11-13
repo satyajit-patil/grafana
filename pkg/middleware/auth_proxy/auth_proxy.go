@@ -92,7 +92,7 @@ func New(options *Options) *AuthProxy {
 		headerType:          setting.AuthProxyHeaderProperty,
 		headers:             setting.AuthProxyHeaders,
 		whitelistIP:         setting.AuthProxyWhitelist,
-		cacheTTL:            setting.AuthProxySyncTtl,
+		cacheTTL:            setting.AuthProxyLDAPSyncTtl,
 		LDAPAllowSignup:     setting.LDAPAllowSignup,
 		AuthProxyAutoSignUp: setting.AuthProxyAutoSignUp,
 	}

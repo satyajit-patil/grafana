@@ -1,4 +1,4 @@
-import { DataQuery, DataSourceJsonData } from '@grafana/data';
+import { DataQuery, DataSourceJsonData } from '@grafana/ui';
 
 export enum PromContext {
   Explore = 'explore',
@@ -25,7 +25,6 @@ export interface PromOptions extends DataSourceJsonData {
   queryTimeout: string;
   httpMethod: string;
   directUrl: string;
-  customQueryParameters?: string;
 }
 
 export interface PromQueryRequest extends PromQuery {

@@ -141,13 +141,9 @@ type AsciiLine struct {
 
 func (f *JSONFormatter) Format(diff diff.Diff) (result string, err error) {
 	if v, ok := f.left.(map[string]interface{}); ok {
-		if err := f.formatObject(v, diff); err != nil {
-			return "", err
-		}
+		f.formatObject(v, diff)
 	} else if v, ok := f.left.([]interface{}); ok {
-		if err := f.formatArray(v, diff); err != nil {
-			return "", err
-		}
+		f.formatArray(v, diff)
 	} else {
 		return "", fmt.Errorf("expected map[string]interface{} or []interface{}, got %T",
 			f.left)
@@ -159,43 +155,29 @@ func (f *JSONFormatter) Format(diff diff.Diff) (result string, err error) {
 		fmt.Printf("%v\n", err)
 		return "", err
 	}
-
 	return b.String(), nil
 }
 
-func (f *JSONFormatter) formatObject(left map[string]interface{}, df diff.Diff) error {
+func (f *JSONFormatter) formatObject(left map[string]interface{}, df diff.Diff) {
 	f.addLineWith(ChangeNil, "{")
 	f.push("ROOT", len(left), false)
-	if err := f.processObject(left, df.Deltas()); err != nil {
-		f.pop()
-		return err
-	}
-
+	f.processObject(left, df.Deltas())
 	f.pop()
 	f.addLineWith(ChangeNil, "}")
-	return nil
 }
 
-func (f *JSONFormatter) formatArray(left []interface{}, df diff.Diff) error {
+func (f *JSONFormatter) formatArray(left []interface{}, df diff.Diff) {
 	f.addLineWith(ChangeNil, "[")
 	f.push("ROOT", len(left), true)
-	if err := f.processArray(left, df.Deltas()); err != nil {
-		f.pop()
-		return err
-	}
-
+	f.processArray(left, df.Deltas())
 	f.pop()
 	f.addLineWith(ChangeNil, "]")
-	return nil
 }
 
 func (f *JSONFormatter) processArray(array []interface{}, deltas []diff.Delta) error {
 	patchedIndex := 0
 	for index, value := range array {
-		if err := f.processItem(value, deltas, diff.Index(index)); err != nil {
-			return err
-		}
-
+		f.processItem(value, deltas, diff.Index(index))
 		patchedIndex++
 	}
 
@@ -219,9 +201,7 @@ func (f *JSONFormatter) processObject(object map[string]interface{}, deltas []di
 	names := sortKeys(object)
 	for _, name := range names {
 		value := object[name]
-		if err := f.processItem(value, deltas, diff.Name(name)); err != nil {
-			return err
-		}
+		f.processItem(value, deltas, diff.Name(name))
 	}
 
 	// Added
@@ -256,11 +236,7 @@ func (f *JSONFormatter) processItem(value interface{}, deltas []diff.Delta, posi
 				f.print("{")
 				f.closeLine()
 				f.push(positionStr, len(o), false)
-				if err := f.processObject(o, matchedDelta.Deltas); err != nil {
-					f.pop()
-					return err
-				}
-
+				f.processObject(o, matchedDelta.Deltas)
 				f.pop()
 				f.newLine(ChangeNil)
 				f.print("}")
@@ -281,11 +257,7 @@ func (f *JSONFormatter) processItem(value interface{}, deltas []diff.Delta, posi
 				f.print("[")
 				f.closeLine()
 				f.push(positionStr, len(a), true)
-				if err := f.processArray(a, matchedDelta.Deltas); err != nil {
-					f.pop()
-					return err
-				}
-
+				f.processArray(a, matchedDelta.Deltas)
 				f.pop()
 				f.newLine(ChangeNil)
 				f.print("]")

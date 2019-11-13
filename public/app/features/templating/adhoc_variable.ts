@@ -1,31 +1,18 @@
 import _ from 'lodash';
-import {
-  AdHocVariableFilter,
-  AdHocVariableModel,
-  assignModelProperties,
-  VariableActions,
-  VariableHide,
-  VariableType,
-  variableTypes,
-} from './variable';
+import { Variable, assignModelProperties, variableTypes } from './variable';
 
-export class AdhocVariable implements AdHocVariableModel, VariableActions {
-  type: VariableType;
-  name: string;
-  label: string;
-  hide: VariableHide;
+export class AdhocVariable implements Variable {
+  filters: any[];
   skipUrlSync: boolean;
-  filters: AdHocVariableFilter[];
-  datasource: string;
 
-  defaults: AdHocVariableModel = {
+  defaults: any = {
     type: 'adhoc',
     name: '',
     label: '',
-    hide: VariableHide.dontHide,
-    skipUrlSync: false,
+    hide: 0,
     datasource: null,
     filters: [],
+    skipUrlSync: false,
   };
 
   /** @ngInject */
@@ -63,7 +50,6 @@ export class AdhocVariable implements AdHocVariableModel, VariableActions {
         key: values[0],
         operator: values[1],
         value: values[2],
-        condition: '',
       };
     });
 

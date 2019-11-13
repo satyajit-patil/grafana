@@ -9,8 +9,6 @@ import (
 	"github.com/grafana/grafana/pkg/setting"
 )
 
-const pngExt = ".png"
-
 type ImageUploader interface {
 	Upload(ctx context.Context, path string) (string, error)
 }

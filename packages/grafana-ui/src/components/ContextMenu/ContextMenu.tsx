@@ -1,8 +1,7 @@
 import React, { useContext, useRef, useState, useLayoutEffect } from 'react';
 import { css, cx } from 'emotion';
 import useClickAway from 'react-use/lib/useClickAway';
-import { selectThemeVariant, ThemeContext } from '../../index';
-import { GrafanaTheme } from '@grafana/data';
+import { GrafanaTheme, selectThemeVariant, ThemeContext } from '../../index';
 import { stylesFactory } from '../../themes/stylesFactory';
 import { Portal, List } from '../index';
 import { LinkTarget } from '@grafana/data';
@@ -190,7 +189,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = React.memo(({ x, y, onClo
           renderItem={(item, index) => {
             return (
               <>
-                <ContextMenuGroup group={item} onClick={onClose} />
+                <ContextMenuGroup group={item} onItemClick={onClose} />
               </>
             );
           }}
@@ -216,7 +215,7 @@ const ContextMenuItem: React.FC<ContextMenuItemProps> = React.memo(
     return (
       <div className={styles.item}>
         <a
-          href={url ? url : undefined}
+          href={url}
           target={target || '_self'}
           className={cx(className, styles.link)}
           onClick={e => {
@@ -234,10 +233,10 @@ const ContextMenuItem: React.FC<ContextMenuItemProps> = React.memo(
 
 interface ContextMenuGroupProps {
   group: ContextMenuGroup;
-  onClick?: () => void; // Used with 'onClose'
+  onItemClick?: () => void;
 }
 
-const ContextMenuGroup: React.FC<ContextMenuGroupProps> = ({ group, onClick }) => {
+const ContextMenuGroup: React.FC<ContextMenuGroupProps> = ({ group, onItemClick }) => {
   const theme = useContext(ThemeContext);
   const styles = getContextMenuStyles(theme);
 
@@ -262,9 +261,8 @@ const ContextMenuGroup: React.FC<ContextMenuGroupProps> = ({ group, onClick }) =
                   item.onClick(e);
                 }
 
-                // Typically closes the context menu
-                if (onClick) {
-                  onClick();
+                if (onItemClick) {
+                  onItemClick();
                 }
               }}
             />

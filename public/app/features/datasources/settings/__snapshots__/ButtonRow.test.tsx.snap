@@ -12,7 +12,6 @@ exports[`Render should render component 1`] = `
     Test
   </button>
   <button
-    aria-label="Delete button"
     className="btn btn-danger"
     disabled={true}
     onClick={[MockFunction]}
@@ -43,7 +42,6 @@ exports[`Render should render with buttons enabled 1`] = `
     Save & Test
   </button>
   <button
-    aria-label="Delete button"
     className="btn btn-danger"
     disabled={false}
     onClick={[MockFunction]}

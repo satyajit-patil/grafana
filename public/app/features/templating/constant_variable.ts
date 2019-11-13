@@ -1,31 +1,19 @@
-import {
-  assignModelProperties,
-  ConstantVariableModel,
-  VariableActions,
-  VariableHide,
-  VariableOption,
-  VariableType,
-  variableTypes,
-} from './variable';
+import { Variable, assignModelProperties, variableTypes } from './variable';
 import { VariableSrv } from './all';
 
-export class ConstantVariable implements ConstantVariableModel, VariableActions {
-  type: VariableType;
-  name: string;
-  label: string;
-  hide: VariableHide;
-  skipUrlSync: boolean;
+export class ConstantVariable implements Variable {
   query: string;
-  options: VariableOption[];
-  current: VariableOption;
+  options: any[];
+  current: any;
+  skipUrlSync: boolean;
 
-  defaults: ConstantVariableModel = {
+  defaults: any = {
     type: 'constant',
     name: '',
-    hide: VariableHide.hideLabel,
+    hide: 2,
     label: '',
     query: '',
-    current: {} as VariableOption,
+    current: {},
     options: [],
     skipUrlSync: false,
   };
@@ -45,7 +33,7 @@ export class ConstantVariable implements ConstantVariableModel, VariableActions 
   }
 
   updateOptions() {
-    this.options = [{ text: this.query.trim(), value: this.query.trim(), selected: false }];
+    this.options = [{ text: this.query.trim(), value: this.query.trim() }];
     this.setValue(this.options[0]);
     return Promise.resolve();
   }

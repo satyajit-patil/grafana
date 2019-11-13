@@ -3,7 +3,7 @@ import { ThemeContext } from '../../themes/ThemeContext';
 import { css } from 'emotion';
 import { DataFrame } from '@grafana/data';
 import { JSONFormatter } from '../JSONFormatter/JSONFormatter';
-import { GrafanaTheme } from '@grafana/data';
+import { GrafanaTheme } from '../../types/theme';
 
 interface TransformationRowProps {
   name: string;

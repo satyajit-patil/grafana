@@ -6,8 +6,8 @@ import { StoreState } from 'app/types';
 import { addDataSource, loadDataSourceTypes, setDataSourceTypeSearchQuery } from './state/actions';
 import { getDataSourceTypes } from './state/selectors';
 import { FilterInput } from 'app/core/components/FilterInput/FilterInput';
-import { List } from '@grafana/ui';
-import { DataSourcePluginMeta, NavModel, PluginType } from '@grafana/data';
+import { DataSourcePluginMeta, List, PluginType } from '@grafana/ui';
+import { NavModel } from '@grafana/data';
 
 export interface Props {
   navModel: NavModel;
@@ -224,7 +224,7 @@ function getGrafanaCloudPhantomPlugin(): DataSourcePluginMeta {
       author: { name: 'Grafana Labs' },
       links: [
         {
-          url: 'https://grafana.com/products/cloud/',
+          url: 'https://grafana.com/cloud',
           name: 'Learn more',
         },
       ],

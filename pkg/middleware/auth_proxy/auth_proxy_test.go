@@ -80,15 +80,14 @@ func TestMiddlewareContext(t *testing.T) {
 			Convey("with a simple cache key", func() {
 				// Set cache key
 				key := fmt.Sprintf(CachePrefix, base32.StdEncoding.EncodeToString([]byte(name)))
-				err := store.Set(key, int64(33), 0)
-				So(err, ShouldBeNil)
+				store.Set(key, int64(33), 0)
 
 				// Set up the middleware
 				auth := prepareMiddleware(t, req, store)
 				id, err := auth.Login()
-				So(err, ShouldBeNil)
 
 				So(auth.getKey(), ShouldEqual, "auth-proxy-sync-ttl:NVQXE23FNRXWO===")
+				So(err, ShouldBeNil)
 				So(id, ShouldEqual, 33)
 			})
 
@@ -98,14 +97,14 @@ func TestMiddlewareContext(t *testing.T) {
 				req.Header.Add("X-WEBAUTH-GROUPS", group)
 
 				key := fmt.Sprintf(CachePrefix, base32.StdEncoding.EncodeToString([]byte(name+"-"+group)))
-				err := store.Set(key, int64(33), 0)
-				So(err, ShouldBeNil)
+				store.Set(key, int64(33), 0)
 
 				auth := prepareMiddleware(t, req, store)
 
 				id, err := auth.Login()
-				So(err, ShouldBeNil)
+
 				So(auth.getKey(), ShouldEqual, "auth-proxy-sync-ttl:NVQXE23FNRXWOLLHOJQWMYLOMEWWG33SMUWXIZLBNU======")
+				So(err, ShouldBeNil)
 				So(id, ShouldEqual, 33)
 			})
 

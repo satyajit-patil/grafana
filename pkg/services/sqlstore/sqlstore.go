@@ -24,7 +24,6 @@ import (
 	"github.com/grafana/grafana/pkg/setting"
 	_ "github.com/grafana/grafana/pkg/tsdb/mssql"
 	"github.com/grafana/grafana/pkg/util"
-	"github.com/grafana/grafana/pkg/util/errutil"
 	_ "github.com/lib/pq"
 )
 
@@ -55,11 +54,11 @@ type SqlStore struct {
 	Bus          bus.Bus                  `inject:""`
 	CacheService *localcache.CacheService `inject:""`
 
-	dbCfg                       DatabaseConfig
-	engine                      *xorm.Engine
-	log                         log.Logger
-	Dialect                     migrator.Dialect
-	skipEnsureDefaultOrgAndUser bool
+	dbCfg           DatabaseConfig
+	engine          *xorm.Engine
+	log             log.Logger
+	Dialect         migrator.Dialect
+	skipEnsureAdmin bool
 }
 
 func (ss *SqlStore) Init() error {
@@ -100,16 +99,19 @@ func (ss *SqlStore) Init() error {
 	// Register handlers
 	ss.addUserQueryAndCommandHandlers()
 
-	if ss.skipEnsureDefaultOrgAndUser {
+	// ensure admin user
+	if ss.skipEnsureAdmin {
 		return nil
 	}
 
-	return ss.ensureMainOrgAndAdminUser()
+	return ss.ensureAdminUser()
 }
 
-func (ss *SqlStore) ensureMainOrgAndAdminUser() error {
+func (ss *SqlStore) ensureAdminUser() error {
+	systemUserCountQuery := m.GetSystemUserCountStatsQuery{}
+
 	err := ss.InTransaction(context.Background(), func(ctx context.Context) error {
-		systemUserCountQuery := m.GetSystemUserCountStatsQuery{}
+
 		err := bus.DispatchCtx(ctx, &systemUserCountQuery)
 		if err != nil {
 			return fmt.Errorf("Could not determine if admin user exists: %v", err)
@@ -119,28 +121,18 @@ func (ss *SqlStore) ensureMainOrgAndAdminUser() error {
 			return nil
 		}
 
-		// ensure admin user
-		if !ss.Cfg.DisableInitAdminCreation {
-			cmd := m.CreateUserCommand{}
-			cmd.Login = setting.AdminUser
-			cmd.Email = setting.AdminUser + "@localhost"
-			cmd.Password = setting.AdminPassword
-			cmd.IsAdmin = true
+		cmd := m.CreateUserCommand{}
+		cmd.Login = setting.AdminUser
+		cmd.Email = setting.AdminUser + "@localhost"
+		cmd.Password = setting.AdminPassword
+		cmd.IsAdmin = true
 
-			if err := bus.DispatchCtx(ctx, &cmd); err != nil {
-				return fmt.Errorf("Failed to create admin user: %v", err)
-			}
-
-			ss.log.Info("Created default admin", "user", setting.AdminUser)
-			return nil
+		if err := bus.DispatchCtx(ctx, &cmd); err != nil {
+			return fmt.Errorf("Failed to create admin user: %v", err)
 		}
 
-		// ensure default org if default admin user is disabled
-		if err := createDefaultOrg(ctx); err != nil {
-			return errutil.Wrap("Failed to create default organization", err)
-		}
+		ss.log.Info("Created default admin", "user", setting.AdminUser)
 
-		ss.log.Info("Created default organization")
 		return nil
 	})
 
@@ -187,27 +179,20 @@ func (ss *SqlStore) buildConnectionString() (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if err := mysql.RegisterTLSConfig("custom", tlsCert); err != nil {
-				return "", err
-			}
-
+			mysql.RegisterTLSConfig("custom", tlsCert)
 			cnnstr += "&tls=custom"
 		}
 
 		cnnstr += ss.buildExtraConnectionString('&')
 	case migrator.POSTGRES:
-		addr, err := util.SplitHostPortDefault(ss.dbCfg.Host, "127.0.0.1", "5432")
-		if err != nil {
-			return "", errutil.Wrapf(err, "Invalid host specifier '%s'", ss.dbCfg.Host)
-		}
-
+		host, port := util.SplitHostPortDefault(ss.dbCfg.Host, "127.0.0.1", "5432")
 		if ss.dbCfg.Pwd == "" {
 			ss.dbCfg.Pwd = "''"
 		}
 		if ss.dbCfg.User == "" {
 			ss.dbCfg.User = "''"
 		}
-		cnnstr = fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=%s sslcert=%s sslkey=%s sslrootcert=%s", ss.dbCfg.User, ss.dbCfg.Pwd, addr.Host, addr.Port, ss.dbCfg.Name, ss.dbCfg.SslMode, ss.dbCfg.ClientCertPath, ss.dbCfg.ClientKeyPath, ss.dbCfg.CaCertPath)
+		cnnstr = fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=%s sslcert=%s sslkey=%s sslrootcert=%s", ss.dbCfg.User, ss.dbCfg.Pwd, host, port, ss.dbCfg.Name, ss.dbCfg.SslMode, ss.dbCfg.ClientCertPath, ss.dbCfg.ClientKeyPath, ss.dbCfg.CaCertPath)
 
 		cnnstr += ss.buildExtraConnectionString(' ')
 	case migrator.SQLITE:
@@ -215,10 +200,7 @@ func (ss *SqlStore) buildConnectionString() (string, error) {
 		if !filepath.IsAbs(ss.dbCfg.Path) {
 			ss.dbCfg.Path = filepath.Join(ss.Cfg.DataPath, ss.dbCfg.Path)
 		}
-		if err := os.MkdirAll(path.Dir(ss.dbCfg.Path), os.ModePerm); err != nil {
-			return "", err
-		}
-
+		os.MkdirAll(path.Dir(ss.dbCfg.Path), os.ModePerm)
 		cnnstr = fmt.Sprintf("file:%s?cache=%s&mode=rwc", ss.dbCfg.Path, ss.dbCfg.CacheMode)
 		cnnstr += ss.buildExtraConnectionString('&')
 	default:
@@ -312,9 +294,9 @@ type ITestDB interface {
 func InitTestDB(t ITestDB) *SqlStore {
 	t.Helper()
 	sqlstore := &SqlStore{}
+	sqlstore.skipEnsureAdmin = true
 	sqlstore.Bus = bus.New()
 	sqlstore.CacheService = localcache.New(5*time.Minute, 10*time.Minute)
-	sqlstore.skipEnsureDefaultOrgAndUser = true
 
 	dbType := migrator.SQLITE
 
@@ -325,27 +307,16 @@ func InitTestDB(t ITestDB) *SqlStore {
 
 	// set test db config
 	sqlstore.Cfg = setting.NewCfg()
-	sec, err := sqlstore.Cfg.Raw.NewSection("database")
-	if err != nil {
-		t.Fatalf("Failed to create section: %s", err)
-	}
-	if _, err := sec.NewKey("type", dbType); err != nil {
-		t.Fatalf("Failed to create key: %s", err)
-	}
+	sec, _ := sqlstore.Cfg.Raw.NewSection("database")
+	sec.NewKey("type", dbType)
 
 	switch dbType {
 	case "mysql":
-		if _, err := sec.NewKey("connection_string", sqlutil.TestDB_Mysql.ConnStr); err != nil {
-			t.Fatalf("Failed to create key: %s", err)
-		}
+		sec.NewKey("connection_string", sqlutil.TestDB_Mysql.ConnStr)
 	case "postgres":
-		if _, err := sec.NewKey("connection_string", sqlutil.TestDB_Postgres.ConnStr); err != nil {
-			t.Fatalf("Failed to create key: %s", err)
-		}
+		sec.NewKey("connection_string", sqlutil.TestDB_Postgres.ConnStr)
 	default:
-		if _, err := sec.NewKey("connection_string", sqlutil.TestDB_Sqlite3.ConnStr); err != nil {
-			t.Fatalf("Failed to create key: %s", err)
-		}
+		sec.NewKey("connection_string", sqlutil.TestDB_Sqlite3.ConnStr)
 	}
 
 	// need to get engine to clean db before we init

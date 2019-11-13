@@ -382,8 +382,7 @@ func TestMSSQL(t *testing.T) {
 
 			if exist, err := sess.IsTableExist(metric_values{}); err != nil || exist {
 				So(err, ShouldBeNil)
-				err = sess.DropTable(metric_values{})
-				So(err, ShouldBeNil)
+				sess.DropTable(metric_values{})
 			}
 			err := sess.CreateTable(metric_values{})
 			So(err, ShouldBeNil)

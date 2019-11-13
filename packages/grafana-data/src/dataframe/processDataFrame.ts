@@ -57,13 +57,6 @@ function convertTableToDataFrame(table: TableData): DataFrame {
 }
 
 function convertTimeSeriesToDataFrame(timeSeries: TimeSeries): DataFrame {
-  const times: number[] = [];
-  const values: TimeSeriesValue[] = [];
-  for (const point of timeSeries.datapoints) {
-    values.push(point[0]);
-    times.push(point[1] as number);
-  }
-
   const fields = [
     {
       name: timeSeries.target || 'Value',
@@ -71,23 +64,30 @@ function convertTimeSeriesToDataFrame(timeSeries: TimeSeries): DataFrame {
       config: {
         unit: timeSeries.unit,
       },
-      values: new ArrayVector<TimeSeriesValue>(values),
-      labels: timeSeries.tags,
+      values: new ArrayVector<TimeSeriesValue>(),
     },
     {
       name: 'Time',
       type: FieldType.time,
-      config: {},
-      values: new ArrayVector<number>(times),
+      config: {
+        unit: 'dateTimeAsIso',
+      },
+      values: new ArrayVector<number>(),
     },
   ];
 
+  for (const point of timeSeries.datapoints) {
+    fields[0].values.buffer.push(point[0]);
+    fields[1].values.buffer.push(point[1]);
+  }
+
   return {
     name: timeSeries.target,
+    labels: timeSeries.tags,
     refId: timeSeries.refId,
     meta: timeSeries.meta,
     fields,
-    length: values.length,
+    length: timeSeries.datapoints.length,
   };
 }
 
@@ -132,7 +132,6 @@ function convertJSONDocumentDataToDataFrame(timeSeries: TimeSeries): DataFrame {
     {
       name: timeSeries.target,
       type: FieldType.other,
-      labels: timeSeries.tags,
       config: {
         unit: timeSeries.unit,
         filterable: (timeSeries as any).filterable,
@@ -147,6 +146,7 @@ function convertJSONDocumentDataToDataFrame(timeSeries: TimeSeries): DataFrame {
 
   return {
     name: timeSeries.target,
+    labels: timeSeries.tags,
     refId: timeSeries.target,
     meta: { json: true },
     fields,
@@ -156,7 +156,7 @@ function convertJSONDocumentDataToDataFrame(timeSeries: TimeSeries): DataFrame {
 
 // PapaParse Dynamic Typing regex:
 // https://github.com/mholt/PapaParse/blob/master/papaparse.js#L998
-const NUMBER = /^\s*(-?(\d*\.?\d+|\d+\.?\d*)(e[-+]?\d+)?|NAN)\s*$/i;
+const NUMBER = /^\s*-?(\d*\.?\d+|\d+\.?\d*)(e[-+]?\d+)?\s*$/i;
 
 /**
  * Given a value this will guess the best column type
@@ -445,7 +445,6 @@ export function toDataFrameDTO(data: DataFrame): DataFrameDTO {
       type: f.type,
       config: f.config,
       values: f.values.toArray(),
-      labels: f.labels,
     };
   });
 
@@ -454,5 +453,6 @@ export function toDataFrameDTO(data: DataFrame): DataFrameDTO {
     refId: data.refId,
     meta: data.meta,
     name: data.name,
+    labels: data.labels,
   };
 }

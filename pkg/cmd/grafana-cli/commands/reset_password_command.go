@@ -10,7 +10,6 @@ import (
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/sqlstore"
 	"github.com/grafana/grafana/pkg/util"
-	"github.com/grafana/grafana/pkg/util/errutil"
 )
 
 const AdminUserId = 1
@@ -29,10 +28,7 @@ func resetPasswordCommand(c utils.CommandLine, sqlStore *sqlstore.SqlStore) erro
 		return fmt.Errorf("Could not read user from database. Error: %v", err)
 	}
 
-	passwordHashed, err := util.EncodePassword(newPassword, userQuery.Result.Salt)
-	if err != nil {
-		return err
-	}
+	passwordHashed := util.EncodePassword(newPassword, userQuery.Result.Salt)
 
 	cmd := models.ChangeUserPasswordCommand{
 		UserId:      AdminUserId,
@@ -40,7 +36,7 @@ func resetPasswordCommand(c utils.CommandLine, sqlStore *sqlstore.SqlStore) erro
 	}
 
 	if err := bus.Dispatch(&cmd); err != nil {
-		return errutil.Wrapf(err, "Failed to update user password")
+		return fmt.Errorf("Failed to update user password")
 	}
 
 	logger.Infof("\n")

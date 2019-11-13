@@ -51,9 +51,7 @@ func newMysqlQueryEndpoint(datasource *models.DataSource) (tsdb.TsdbQueryEndpoin
 
 	if tlsConfig.RootCAs != nil || len(tlsConfig.Certificates) > 0 {
 		tlsConfigString := fmt.Sprintf("ds%d", datasource.Id)
-		if err := mysql.RegisterTLSConfig(tlsConfigString, tlsConfig); err != nil {
-			return nil, err
-		}
+		mysql.RegisterTLSConfig(tlsConfigString, tlsConfig)
 		cnnstr += "&tls=" + tlsConfigString
 	}
 

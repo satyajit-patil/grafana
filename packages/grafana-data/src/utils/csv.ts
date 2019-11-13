@@ -271,12 +271,6 @@ export function toCSV(data: DataFrame[], config?: CSVConfig): string {
 
   for (const series of data) {
     const { fields } = series;
-
-    // ignore frames with no fields
-    if (fields.length === 0) {
-      continue;
-    }
-
     if (config.headerStyle === CSVHeaderStyle.full) {
       csv =
         csv +
@@ -293,9 +287,7 @@ export function toCSV(data: DataFrame[], config?: CSVConfig): string {
       }
       csv += config.newline;
     }
-
     const length = fields[0].values.length;
-
     if (length > 0) {
       const writers = fields.map(field => makeFieldWriter(field, config!));
       for (let i = 0; i < length; i++) {

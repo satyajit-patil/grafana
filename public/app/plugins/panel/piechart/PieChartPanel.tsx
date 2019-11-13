@@ -5,12 +5,11 @@ import React, { PureComponent } from 'react';
 import { config } from 'app/core/config';
 
 // Components
-import { PieChart } from '@grafana/ui';
-import { getFieldDisplayValues } from '@grafana/data';
+import { PieChart, getFieldDisplayValues } from '@grafana/ui';
 
 // Types
 import { PieChartOptions } from './types';
-import { PanelProps } from '@grafana/data';
+import { PanelProps } from '@grafana/ui';
 
 interface Props extends PanelProps<PieChartOptions> {}
 

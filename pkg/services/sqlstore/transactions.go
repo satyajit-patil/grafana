@@ -7,7 +7,6 @@ import (
 	"github.com/go-xorm/xorm"
 	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/infra/log"
-	"github.com/grafana/grafana/pkg/util/errutil"
 	sqlite3 "github.com/mattn/go-sqlite3"
 )
 
@@ -42,24 +41,19 @@ func inTransactionWithRetryCtx(ctx context.Context, engine *xorm.Engine, callbac
 	err = callback(sess)
 
 	// special handling of database locked errors for sqlite, then we can retry 5 times
-	if sqlError, ok := err.(sqlite3.Error); ok && retry < 5 && sqlError.Code ==
-		sqlite3.ErrLocked || sqlError.Code == sqlite3.ErrBusy {
-		if rollErr := sess.Rollback(); rollErr != nil {
-			return errutil.Wrapf(err, "Rolling back transaction due to error failed: %s", rollErr)
+	if sqlError, ok := err.(sqlite3.Error); ok && retry < 5 {
+		if sqlError.Code == sqlite3.ErrLocked || sqlError.Code == sqlite3.ErrBusy {
+			sess.Rollback()
+			time.Sleep(time.Millisecond * time.Duration(10))
+			sqlog.Info("Database locked, sleeping then retrying", "error", err, "retry", retry)
+			return inTransactionWithRetry(callback, retry+1)
 		}
-
-		time.Sleep(time.Millisecond * time.Duration(10))
-		sqlog.Info("Database locked, sleeping then retrying", "error", err, "retry", retry)
-		return inTransactionWithRetry(callback, retry+1)
 	}
 
 	if err != nil {
-		if rollErr := sess.Rollback(); rollErr != nil {
-			return errutil.Wrapf(err, "Rolling back transaction due to error failed: %s", rollErr)
-		}
+		sess.Rollback()
 		return err
-	}
-	if err := sess.Commit(); err != nil {
+	} else if err = sess.Commit(); err != nil {
 		return err
 	}
 

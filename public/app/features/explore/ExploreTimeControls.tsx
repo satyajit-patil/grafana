@@ -9,7 +9,6 @@ import { TimeRange, TimeOption, TimeZone, RawTimeRange, dateTimeForTimeZone } fr
 
 // Components
 import { TimePicker } from '@grafana/ui';
-import { TimeSyncButton } from './TimeSyncButton';
 
 // Utils & Services
 import { defaultSelectOptions } from '@grafana/ui/src/components/TimePicker/TimePicker';
@@ -17,12 +16,8 @@ import { getShiftedTimeRange, getZoomedTimeRange } from 'app/core/utils/timePick
 
 export interface Props {
   exploreId: ExploreId;
-  hideText?: boolean;
   range: TimeRange;
   timeZone: TimeZone;
-  splitted: boolean;
-  syncedTimes: boolean;
-  onChangeTimeSync: () => void;
   onChangeTime: (range: RawTimeRange) => void;
 }
 
@@ -72,19 +67,18 @@ export class ExploreTimeControls extends Component<Props> {
   };
 
   render() {
-    const { range, timeZone, splitted, syncedTimes, onChangeTimeSync, hideText } = this.props;
-    const timeSyncButton = splitted ? <TimeSyncButton onClick={onChangeTimeSync} isSynced={syncedTimes} /> : null;
-    const timePickerCommonProps = {
-      value: range,
-      onChange: this.onChangeTimePicker,
-      timeZone,
-      onMoveBackward: this.onMoveBack,
-      onMoveForward: this.onMoveForward,
-      onZoom: this.onZoom,
-      selectOptions: this.setActiveTimeOption(defaultSelectOptions, range.raw),
-      hideText,
-    };
+    const { range, timeZone } = this.props;
 
-    return <TimePicker {...timePickerCommonProps} timeSyncButton={timeSyncButton} isSynced={syncedTimes} />;
+    return (
+      <TimePicker
+        value={range}
+        onChange={this.onChangeTimePicker}
+        timeZone={timeZone}
+        onMoveBackward={this.onMoveBack}
+        onMoveForward={this.onMoveForward}
+        onZoom={this.onZoom}
+        selectOptions={this.setActiveTimeOption(defaultSelectOptions, range.raw)}
+      />
+    );
   }
 }

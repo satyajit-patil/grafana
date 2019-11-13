@@ -72,7 +72,6 @@ export const GraphWithLegend: React.FunctionComponent<GraphWithLegendProps> = (p
     lineWidth,
     onHorizontalRegionSelected,
     timeZone,
-    children,
   } = props;
   const { graphContainer, wrapper, legendContainer } = getGraphWithLegendStyles(props);
 
@@ -106,9 +105,7 @@ export const GraphWithLegend: React.FunctionComponent<GraphWithLegendProps> = (p
           isStacked={isStacked}
           lineWidth={lineWidth}
           onHorizontalRegionSelected={onHorizontalRegionSelected}
-        >
-          {children}
-        </Graph>
+        />
       </div>
 
       {isLegendVisible && (

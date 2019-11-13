@@ -1,7 +1,7 @@
 import React from 'react';
-import { LogRows, CustomScrollbar } from '@grafana/ui';
-import { LogsDedupStrategy, PanelProps } from '@grafana/data';
+import { PanelProps, LogRows, CustomScrollbar } from '@grafana/ui';
 import { Options } from './types';
+import { LogsDedupStrategy } from '@grafana/data';
 import { dataFrameToLogsModel } from 'app/core/logs_model';
 import { sortLogsResult } from 'app/core/utils/explore';
 
@@ -21,18 +21,18 @@ export const LogsPanel: React.FunctionComponent<LogsPanelProps> = ({
     );
   }
 
-  const newResults = data ? dataFrameToLogsModel(data.series, data.request.intervalMs, timeZone) : null;
+  const newResults = data ? dataFrameToLogsModel(data.series, data.request.intervalMs) : null;
   const sortedNewResults = sortLogsResult(newResults, sortOrder);
 
   return (
     <CustomScrollbar autoHide>
       <LogRows
-        logRows={sortedNewResults.rows}
+        data={sortedNewResults}
         dedupStrategy={LogsDedupStrategy.none}
         highlighterExpressions={[]}
         showTime={showTime}
+        showLabels={false}
         timeZone={timeZone}
-        isLogsPanel={true}
       />
     </CustomScrollbar>
   );

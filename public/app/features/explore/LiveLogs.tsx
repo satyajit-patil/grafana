@@ -1,9 +1,10 @@
 import React, { PureComponent } from 'react';
 import { css, cx } from 'emotion';
 import tinycolor from 'tinycolor2';
+import { last } from 'lodash';
 
-import { Themeable, withTheme, getLogRowStyles } from '@grafana/ui';
-import { GrafanaTheme, LogRowModel, TimeZone } from '@grafana/data';
+import { Themeable, withTheme, GrafanaTheme, getLogRowStyles } from '@grafana/ui';
+import { LogsModel, LogRowModel, TimeZone } from '@grafana/data';
 
 import ElapsedTime from './ElapsedTime';
 
@@ -20,7 +21,7 @@ const getStyles = (theme: GrafanaTheme) => ({
       margin-top: auto !important;
     }
   `,
-  logsRowFade: css`
+  logsRowFresh: css`
     label: logs-row-fresh;
     color: ${theme.colors.text};
     background-color: ${tinycolor(theme.colors.blueLight)
@@ -38,6 +39,9 @@ const getStyles = (theme: GrafanaTheme) => ({
       }
     }
   `,
+  logsRowOld: css`
+    label: logs-row-old;
+  `,
   logsRowsIndicator: css`
     font-size: ${theme.typography.size.md};
     padding-top: ${theme.spacing.sm};
@@ -50,7 +54,7 @@ const getStyles = (theme: GrafanaTheme) => ({
 });
 
 export interface Props extends Themeable {
-  logRows?: LogRowModel[];
+  logsResult?: LogsModel;
   timeZone: TimeZone;
   stopLive: () => void;
   onPause: () => void;
@@ -59,7 +63,8 @@ export interface Props extends Themeable {
 }
 
 interface State {
-  logRowsToRender?: LogRowModel[];
+  logsResultToRender?: LogsModel;
+  lastTimestamp: number;
 }
 
 class LiveLogs extends PureComponent<Props, State> {
@@ -70,7 +75,8 @@ class LiveLogs extends PureComponent<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      logRowsToRender: props.logRows,
+      logsResultToRender: props.logsResult,
+      lastTimestamp: 0,
     };
   }
 
@@ -99,7 +105,11 @@ class LiveLogs extends PureComponent<Props, State> {
         // We update what we show only if not paused. We keep any background subscriptions running and keep updating
         // our state, but we do not show the updates, this allows us start again showing correct result after resuming
         // without creating a gap in the log results.
-        logRowsToRender: nextProps.logRows,
+        logsResultToRender: nextProps.logsResult,
+        lastTimestamp:
+          state.logsResultToRender && last(state.logsResultToRender.rows)
+            ? last(state.logsResultToRender.rows).timeEpochMs
+            : 0,
       };
     } else {
       return null;
@@ -123,12 +133,21 @@ class LiveLogs extends PureComponent<Props, State> {
 
   rowsToRender = () => {
     const { isPaused } = this.props;
-    let rowsToRender: LogRowModel[] = this.state.logRowsToRender;
+    let rowsToRender: LogRowModel[] = this.state.logsResultToRender ? this.state.logsResultToRender.rows : [];
     if (!isPaused) {
       // A perf optimisation here. Show just 100 rows when streaming and full length when the streaming is paused.
       rowsToRender = rowsToRender.slice(-100);
     }
     return rowsToRender;
+  };
+
+  /**
+   * Check if row is fresh so we can apply special styling. This is bit naive and does not take into account rows
+   * which arrive out of order. Because loki datasource sends full data instead of deltas we need to compare the
+   * data and this is easier than doing some intersection of some uuid of each row (which we do not have now anyway)
+   */
+  isFresh = (row: LogRowModel): boolean => {
+    return row.timeEpochMs > this.state.lastTimestamp;
   };
 
   render() {
@@ -144,20 +163,23 @@ class LiveLogs extends PureComponent<Props, State> {
           className={cx(['logs-rows', styles.logsRowsLive])}
           ref={this.scrollContainerRef}
         >
-          {this.rowsToRender().map((row: LogRowModel) => {
+          {this.rowsToRender().map((row: LogRowModel, index) => {
             return (
-              <div className={cx(logsRow, styles.logsRowFade)} key={row.uid}>
+              <div
+                className={cx(logsRow, this.isFresh(row) ? styles.logsRowFresh : styles.logsRowOld)}
+                key={`${row.timeEpochMs}-${index}`}
+              >
                 {showUtc && (
-                  <div className={cx(logsRowLocalTime)} title={`Local: ${row.timeLocal} (${row.timeFromNow})`}>
+                  <div className={cx([logsRowLocalTime])} title={`Local: ${row.timeLocal} (${row.timeFromNow})`}>
                     {row.timeUtc}
                   </div>
                 )}
                 {!showUtc && (
-                  <div className={cx(logsRowLocalTime)} title={`${row.timeUtc} (${row.timeFromNow})`}>
+                  <div className={cx([logsRowLocalTime])} title={`${row.timeUtc} (${row.timeFromNow})`}>
                     {row.timeLocal}
                   </div>
                 )}
-                <div className={cx(logsRowMessage)}>{row.entry}</div>
+                <div className={cx([logsRowMessage])}>{row.entry}</div>
               </div>
             );
           })}
@@ -184,7 +206,7 @@ class LiveLogs extends PureComponent<Props, State> {
           </button>
           {isPaused || (
             <span>
-              Last line received: <ElapsedTime resetKey={this.props.logRows} humanize={true} /> ago
+              Last line received: <ElapsedTime resetKey={this.props.logsResult} humanize={true} /> ago
             </span>
           )}
         </div>

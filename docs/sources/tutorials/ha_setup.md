@@ -1,5 +1,5 @@
 +++
-title = "Setup Grafana for high availability"
+title = "Setup Grafana for High availability"
 type = "docs"
 keywords = ["grafana", "tutorials", "HA", "high availability"]
 [menu.docs]

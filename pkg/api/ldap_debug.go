@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -17,6 +18,7 @@ import (
 var (
 	getLDAPConfig = multildap.GetConfig
 	newLDAP       = multildap.New
+	tokenService  = AuthToken{}.TokenService
 
 	logger = log.New("LDAP.debug")
 
@@ -57,6 +59,14 @@ type LDAPServerDTO struct {
 	Port      int    `json:"port"`
 	Available bool   `json:"available"`
 	Error     string `json:"error"`
+}
+
+type AuthToken struct {
+	TokenService TokenRevoker `inject:""`
+}
+
+type TokenRevoker interface {
+	RevokeAllUserTokens(context.Context, int64) error
 }
 
 // FetchOrgs fetches the organization(s) information by executing a single query to the database. Then, populating the DTO with the information retrieved.
@@ -189,7 +199,8 @@ func (server *HTTPServer) PostSyncUserWithLDAP(c *models.ReqContext) Response {
 	user, _, err := ldapServer.User(query.Result.Login)
 
 	if err != nil {
-		if err == multildap.ErrDidNotFindUser { // User was not in the LDAP server - we need to take action:
+		if err == ldap.ErrCouldNotFindUser { // User was not in the LDAP server - we need to take action:
+
 			if setting.AdminUser == query.Result.Login { // User is *the* Grafana Admin. We cannot disable it.
 				errMsg := fmt.Sprintf(`Refusing to sync grafana super admin "%s" - it would be disabled`, query.Result.Login)
 				logger.Error(errMsg)
@@ -203,16 +214,13 @@ func (server *HTTPServer) PostSyncUserWithLDAP(c *models.ReqContext) Response {
 				return Error(http.StatusInternalServerError, "Failed to disable the user", err)
 			}
 
-			err = server.AuthTokenService.RevokeAllUserTokens(c.Req.Context(), userId)
+			err = tokenService.RevokeAllUserTokens(context.TODO(), userId)
 			if err != nil {
 				return Error(http.StatusInternalServerError, "Failed to remove session tokens for the user", err)
 			}
 
-			return Error(http.StatusBadRequest, "User not found in LDAP. Disabled the user without updating information", nil) // should this be a success?
+			return Success("User disabled without any updates in the information") // should this be a success?
 		}
-
-		logger.Debug("Failed to sync the user with LDAP", "err", err)
-		return Error(http.StatusBadRequest, "Something went wrong while finding the user in LDAP", err)
 	}
 
 	upsertCmd := &models.UpsertUserCommand{

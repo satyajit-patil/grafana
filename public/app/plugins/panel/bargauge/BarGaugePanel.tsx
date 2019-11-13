@@ -5,11 +5,11 @@ import React, { PureComponent } from 'react';
 import { config } from 'app/core/config';
 
 // Components
-import { BarGauge, VizRepeater, DataLinksContextMenu } from '@grafana/ui';
+import { BarGauge, VizRepeater, getFieldDisplayValues, FieldDisplay, DataLinksContextMenu } from '@grafana/ui';
 
 // Types
 import { BarGaugeOptions } from './types';
-import { getFieldDisplayValues, FieldDisplay, PanelProps } from '@grafana/data';
+import { PanelProps } from '@grafana/ui';
 import { getFieldLinksSupplier } from 'app/features/panel/panellinks/linkSuppliers';
 
 export class BarGaugePanel extends PureComponent<PanelProps<BarGaugeOptions>> {

@@ -21,30 +21,20 @@ type ApiKeyJson struct {
 	OrgId int64  `json:"id"`
 }
 
-func New(orgId int64, name string) (KeyGenResult, error) {
-	result := KeyGenResult{}
-
+func New(orgId int64, name string) KeyGenResult {
 	jsonKey := ApiKeyJson{}
+
 	jsonKey.OrgId = orgId
 	jsonKey.Name = name
-	var err error
-	jsonKey.Key, err = util.GetRandomString(32)
-	if err != nil {
-		return result, err
-	}
+	jsonKey.Key = util.GetRandomString(32)
 
-	result.HashedKey, err = util.EncodePassword(jsonKey.Key, name)
-	if err != nil {
-		return result, err
-	}
+	result := KeyGenResult{}
+	result.HashedKey = util.EncodePassword(jsonKey.Key, name)
 
-	jsonString, err := json.Marshal(jsonKey)
-	if err != nil {
-		return result, err
-	}
+	jsonString, _ := json.Marshal(jsonKey)
 
 	result.ClientSecret = base64.StdEncoding.EncodeToString(jsonString)
-	return result, nil
+	return result
 }
 
 func Decode(keyString string) (*ApiKeyJson, error) {
@@ -62,10 +52,7 @@ func Decode(keyString string) (*ApiKeyJson, error) {
 	return &keyObj, nil
 }
 
-func IsValid(key *ApiKeyJson, hashedKey string) (bool, error) {
-	check, err := util.EncodePassword(key.Key, key.Name)
-	if err != nil {
-		return false, err
-	}
-	return check == hashedKey, nil
+func IsValid(key *ApiKeyJson, hashedKey string) bool {
+	check := util.EncodePassword(key.Key, key.Name)
+	return check == hashedKey
 }

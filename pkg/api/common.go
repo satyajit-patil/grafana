@@ -55,9 +55,7 @@ func (r *NormalResponse) WriteTo(ctx *m.ReqContext) {
 		header[k] = v
 	}
 	ctx.Resp.WriteHeader(r.status)
-	if _, err := ctx.Resp.Write(r.body); err != nil {
-		ctx.Logger.Error("Error writing to response", "err", err)
-	}
+	ctx.Resp.Write(r.body)
 }
 
 func (r *NormalResponse) Cache(ttl string) *NormalResponse {

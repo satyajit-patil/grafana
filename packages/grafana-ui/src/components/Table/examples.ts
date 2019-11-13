@@ -1,5 +1,6 @@
-import { toDataFrame, getColorDefinitionByName } from '@grafana/data';
+import { toDataFrame } from '@grafana/data';
 import { ColumnStyle } from './TableCellBuilder';
+import { getColorDefinitionByName } from '../../utils/namedColorsPalette';
 
 const SemiDarkOrange = getColorDefinitionByName('semi-dark-orange');
 

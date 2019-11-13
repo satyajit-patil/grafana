@@ -1,14 +1,12 @@
 package commandstest
 
 import (
-	"os"
-
 	"github.com/grafana/grafana/pkg/cmd/grafana-cli/models"
 )
 
 type FakeGrafanaComClient struct {
 	GetPluginFunc      func(pluginId, repoUrl string) (models.Plugin, error)
-	DownloadFileFunc   func(pluginName string, tmpFile *os.File, url string, checksum string) (err error)
+	DownloadFileFunc   func(pluginName, filePath, url string, checksum string) (content []byte, err error)
 	ListAllPluginsFunc func(repoUrl string) (models.PluginRepo, error)
 }
 
@@ -20,12 +18,12 @@ func (client *FakeGrafanaComClient) GetPlugin(pluginId, repoUrl string) (models.
 	return models.Plugin{}, nil
 }
 
-func (client *FakeGrafanaComClient) DownloadFile(pluginName string, tmpFile *os.File, url string, checksum string) (err error) {
+func (client *FakeGrafanaComClient) DownloadFile(pluginName, filePath, url string, checksum string) (content []byte, err error) {
 	if client.DownloadFileFunc != nil {
-		return client.DownloadFileFunc(pluginName, tmpFile, url, checksum)
+		return client.DownloadFileFunc(pluginName, filePath, url, checksum)
 	}
 
-	return nil
+	return make([]byte, 0), nil
 }
 
 func (client *FakeGrafanaComClient) ListAllPlugins(repoUrl string) (models.PluginRepo, error) {

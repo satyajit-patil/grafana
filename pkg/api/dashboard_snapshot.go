@@ -100,21 +100,11 @@ func CreateDashboardSnapshot(c *m.ReqContext, cmd m.CreateDashboardSnapshotComma
 		metrics.MApiDashboardSnapshotExternal.Inc()
 	} else {
 		if cmd.Key == "" {
-			var err error
-			cmd.Key, err = util.GetRandomString(32)
-			if err != nil {
-				c.JsonApiErr(500, "Could not generate random string", err)
-				return
-			}
+			cmd.Key = util.GetRandomString(32)
 		}
 
 		if cmd.DeleteKey == "" {
-			var err error
-			cmd.DeleteKey, err = util.GetRandomString(32)
-			if err != nil {
-				c.JsonApiErr(500, "Could not generate random string", err)
-				return
-			}
+			cmd.DeleteKey = util.GetRandomString(32)
 		}
 
 		url = setting.ToAbsUrl("dashboard/snapshot/" + cmd.Key)

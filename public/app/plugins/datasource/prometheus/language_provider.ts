@@ -1,7 +1,15 @@
 import _ from 'lodash';
 
-import { dateTime, LanguageProvider, HistoryItem } from '@grafana/data';
-import { CompletionItem, TypeaheadInput, TypeaheadOutput, CompletionItemGroup } from '@grafana/ui';
+import { dateTime } from '@grafana/data';
+
+import {
+  CompletionItem,
+  CompletionItemGroup,
+  LanguageProvider,
+  TypeaheadInput,
+  TypeaheadOutput,
+  HistoryItem,
+} from 'app/types/explore';
 
 import { parseSelector, processLabels, processHistogramLabels } from './language_utils';
 import PromqlSyntax, { FUNCTIONS, RATE_RANGES } from './promql';

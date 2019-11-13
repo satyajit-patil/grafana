@@ -46,12 +46,6 @@ var (
 	ERR_TEMPLATE_NAME = "error"
 )
 
-// This constant corresponds to the default value for ldap_sync_ttl in .ini files
-// it is used for comparision and has to be kept in sync
-const (
-	AUTH_PROXY_SYNC_TTL = 60
-)
-
 var (
 	// App settings.
 	Env              = DEV
@@ -149,14 +143,13 @@ var (
 	AnonymousOrgRole string
 
 	// Auth proxy settings
-	AuthProxyEnabled          bool
-	AuthProxyHeaderName       string
-	AuthProxyHeaderProperty   string
-	AuthProxyAutoSignUp       bool
-	AuthProxyEnableLoginToken bool
-	AuthProxySyncTtl          int
-	AuthProxyWhitelist        string
-	AuthProxyHeaders          map[string]string
+	AuthProxyEnabled        bool
+	AuthProxyHeaderName     string
+	AuthProxyHeaderProperty string
+	AuthProxyAutoSignUp     bool
+	AuthProxyLDAPSyncTtl    int
+	AuthProxyWhitelist      string
+	AuthProxyHeaders        map[string]string
 
 	// Basic Auth
 	BasicAuthEnabled bool
@@ -213,7 +206,6 @@ var (
 	S3TempImageStoreSecretKey string
 
 	ImageUploadProvider string
-	FeatureToggles      map[string]bool
 )
 
 // TODO move all global vars to this struct
@@ -243,7 +235,6 @@ type Cfg struct {
 	RendererLimitAlerting int
 
 	// Security
-	DisableInitAdminCreation         bool
 	DisableBruteForceLoginProtection bool
 	CookieSecure                     bool
 	CookieSameSite                   http.SameSite
@@ -420,7 +411,7 @@ func makeAbsolute(path string, root string) string {
 	return filepath.Join(root, path)
 }
 
-func EvalEnvVarExpression(value string) string {
+func evalEnvVarExpression(value string) string {
 	regex := regexp.MustCompile(`\${(\w+)}`)
 	return regex.ReplaceAllStringFunc(value, func(envVar string) string {
 		envVar = strings.TrimPrefix(envVar, "${")
@@ -439,7 +430,7 @@ func EvalEnvVarExpression(value string) string {
 func evalConfigValues(file *ini.File) {
 	for _, section := range file.Sections() {
 		for _, key := range section.Keys() {
-			key.SetValue(EvalEnvVarExpression(key.Value()))
+			key.SetValue(evalEnvVarExpression(key.Value()))
 		}
 	}
 }
@@ -764,7 +755,6 @@ func (cfg *Cfg) Load(args *CommandLineArgs) error {
 	}
 
 	// admin
-	cfg.DisableInitAdminCreation = security.Key("disable_initial_admin_creation").MustBool(false)
 	AdminUser, err = valueAsString(security, "admin_user", "")
 	if err != nil {
 		return err
@@ -863,18 +853,7 @@ func (cfg *Cfg) Load(args *CommandLineArgs) error {
 		return err
 	}
 	AuthProxyAutoSignUp = authProxy.Key("auto_sign_up").MustBool(true)
-	AuthProxyEnableLoginToken = authProxy.Key("enable_login_token").MustBool(false)
-
-	ldapSyncVal := authProxy.Key("ldap_sync_ttl").MustInt()
-	syncVal := authProxy.Key("sync_ttl").MustInt()
-
-	if ldapSyncVal != AUTH_PROXY_SYNC_TTL {
-		AuthProxySyncTtl = ldapSyncVal
-		cfg.Logger.Warn("[Deprecated] the configuration setting 'ldap_sync_ttl' is deprecated, please use 'sync_ttl' instead")
-	} else {
-		AuthProxySyncTtl = syncVal
-	}
-
+	AuthProxyLDAPSyncTtl = authProxy.Key("ldap_sync_ttl").MustInt()
 	AuthProxyWhitelist, err = valueAsString(authProxy, "whitelist", "")
 	if err != nil {
 		return err
@@ -976,7 +955,6 @@ func (cfg *Cfg) Load(args *CommandLineArgs) error {
 	for _, feature := range util.SplitString(featuresTogglesStr) {
 		cfg.FeatureToggles[feature] = true
 	}
-	FeatureToggles = cfg.FeatureToggles
 
 	// check old location for this option
 	if panelsSection.Key("enable_alpha").MustBool(false) {
@@ -1113,12 +1091,4 @@ func (cfg *Cfg) LogConfigSources() {
 	cfg.Logger.Info("Path Plugins", "path", PluginsPath)
 	cfg.Logger.Info("Path Provisioning", "path", cfg.ProvisioningPath)
 	cfg.Logger.Info("App mode " + Env)
-}
-
-func IsExpressionsEnabled() bool {
-	v, ok := FeatureToggles["expressions"]
-	if !ok {
-		return false
-	}
-	return v
 }

@@ -5,9 +5,6 @@ import { BackendSrv } from 'app/core/services/backend_srv';
 import { IQService } from 'angular';
 import { TemplateSrv } from 'app/features/templating/template_srv';
 import { TimeSrv } from 'app/features/dashboard/services/TimeSrv';
-//Types
-import { MysqlQueryForInterpolation } from './types';
-import { getSearchFilterScopedVar } from '../../../features/templating/variable';
 
 export class MysqlDatasource {
   id: any;
@@ -49,21 +46,6 @@ export class MysqlDatasource {
     });
     return quotedValues.join(',');
   };
-
-  interpolateVariablesInQueries(queries: MysqlQueryForInterpolation[]): MysqlQueryForInterpolation[] {
-    let expandedQueries = queries;
-    if (queries && queries.length > 0) {
-      expandedQueries = queries.map(query => {
-        const expandedQuery = {
-          ...query,
-          datasource: this.name,
-          rawSql: this.templateSrv.replace(query.rawSql, {}, this.interpolateVariable),
-        };
-        return expandedQuery;
-      });
-    }
-    return expandedQueries;
-  }
 
   query(options: any) {
     const queries = _.filter(options.targets, target => {
@@ -131,16 +113,10 @@ export class MysqlDatasource {
       refId = optionalOptions.variable.name;
     }
 
-    const rawSql = this.templateSrv.replace(
-      query,
-      getSearchFilterScopedVar({ query, wildcardChar: '%', options: optionalOptions }),
-      this.interpolateVariable
-    );
-
     const interpolatedQuery = {
       refId: refId,
       datasourceId: this.id,
-      rawSql,
+      rawSql: this.templateSrv.replace(query, {}, this.interpolateVariable),
       format: 'table',
     };
 

@@ -202,9 +202,8 @@ func mockLoginAttemptValidation(err error, sc *authScenarioContext) {
 }
 
 func mockSaveInvalidLoginAttempt(sc *authScenarioContext) {
-	saveInvalidLoginAttempt = func(query *models.LoginUserQuery) error {
+	saveInvalidLoginAttempt = func(query *models.LoginUserQuery) {
 		sc.saveInvalidLoginAttemptWasCalled = true
-		return nil
 	}
 }
 

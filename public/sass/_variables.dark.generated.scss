@@ -98,9 +98,9 @@ $edit-gradient: linear-gradient(180deg, $dark-2 50%, $input-black);
 
 // Links
 // -------------------------
-$link-color: #d8d9da;
+$link-color: #000000;
 $link-color-disabled: #8e8e8e;
-$link-hover-color: #ffffff;
+$link-hover-color: #44C0E6;
 $external-link-color: #33b5e5;
 
 // Typography
@@ -249,7 +249,7 @@ $navbar-button-border: #2f2f32;
 // -------------------------
 $side-menu-bg: $black;
 $side-menu-bg-mobile: $side-menu-bg;
-$side-menu-item-hover-bg: $dark-3;
+$side-menu-item-hover-bg: #def5fc;
 $side-menu-shadow: 0 0 20px black;
 $side-menu-link-color: $link-color;
 

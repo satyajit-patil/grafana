@@ -6,7 +6,7 @@ import config from '../../config';
 const TopSection: FC<any> = () => {
   const navTree = _.cloneDeep(config.bootData.navTree);
   const mainLinks = _.filter(navTree, item => !item.hideFromMenu);
-
+  console.log(mainLinks);
   return (
     <div className="sidemenu__top">
       {mainLinks.map((link, index) => {

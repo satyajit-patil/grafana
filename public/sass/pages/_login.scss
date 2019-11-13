@@ -6,11 +6,10 @@ $login-border: #8daac5;
   background-repeat: no-repeat;
   min-width: 100%;
   margin-left: 0;
-  background-color: $black;
+  background-color: #fafafa;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: url(../img/heatmap_bg_test.svg);
   background-size: cover;
   color: #d8d9da;
 
@@ -107,6 +106,10 @@ select:-webkit-autofill:focus {
   justify-content: center;
   z-index: 1;
   min-height: 320px;
+  background-color: #ffffff;
+  border: #1f1f20;
+  border-style: solid;
+  border-width: 1px;
 }
 
 .login-branding {

@@ -3,13 +3,24 @@ import appEvents from '../../app_events';
 import TopSection from './TopSection';
 import BottomSection from './BottomSection';
 import config from 'app/core/config';
-import { CoreEvents } from 'app/types';
 
 const homeUrl = config.appSubUrl || '/';
 
+function communicate() {
+  const xhr = new XMLHttpRequest();
+
+  xhr.addEventListener('load', () => {
+      // update the state of the component with the result here
+      console.log(xhr.responseText);
+    });
+
+  xhr.open('GET', 'http://a57af8776073811ea9212020d9632263-1678318201.us-west-2.elb.amazonaws.com/api');
+  xhr.send();
+}
+
 export class SideMenu extends PureComponent {
   toggleSideMenuSmallBreakpoint = () => {
-    appEvents.emit(CoreEvents.toggleSidemenuMobile);
+    appEvents.emit('toggle-sidemenu-mobile');
   };
 
   render() {
@@ -24,6 +35,7 @@ export class SideMenu extends PureComponent {
           &nbsp;Close
         </span>
       </div>,
+      <button key="sidebutton" onClick={communicate} type="button">COMMUNICATE WITH GATEWAY!</button>,
       <TopSection key="topsection" />,
       <BottomSection key="bottomsection" />,
     ];
